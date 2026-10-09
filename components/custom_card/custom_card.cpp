@@ -276,8 +276,10 @@ class CardTile : public tessera::Tile {
     return used <= height_;
   }
 
-  // Lay the parts out: the largest value face that fits, side by side on a wide flat tile when a large face fits there;
-  // the words give way before the numbers, the tile's name last.
+  // Lay the parts out as the departures plugin does: the value takes the largest face that fits beside the tile's name,
+  // and the row of labels stays only where it costs the value nothing (else a part's mark stands before its number).
+  // The name goes only where no face fits with it. A wide flat tile puts the parts side by side when the value is no
+  // smaller there than stacked.
   void layout() {
     hide_all();
     if (!note_text_.empty()) {
@@ -291,29 +293,28 @@ class CardTile : public tessera::Tile {
     const std::vector<Line> arrangements[] = {side_by_side(), stacked()};
     const bool named = !shown_name_.empty();
     struct Try { bool head, labels; };
-    const Try tries[] = {{named, true}, {named, false}, {false, false}};
-    const Font large[] = {Font::VALUE, Font::HEADLINE, Font::TITLE};
-    const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
     Font face = Font::BODY;
-    Try chosen = tries[2];
+    Try chosen = {false, false};
     const std::vector<Line> *lines = &arrangements[1];
     bool found = false;
-    for (int pass = 0; pass < 2 && !found; ++pass)
-      for (const std::vector<Line> &all : arrangements) {
-        if (all.empty() || found) continue;
-        for (const Try &t : tries) {
-          const Font *first = pass ? std::begin(every) : std::begin(large);
-          const Font *last = pass ? std::end(every) : std::end(large);
-          for (const Font *f = first; f != last && !found; ++f)
-            if (fits(all, *f, t.head, t.labels)) {
-              face = *f;
-              chosen = t;
-              lines = &all;
-              found = true;
-            }
-          if (found) break;
+    for (const std::vector<Line> &all : arrangements) {
+      if (all.empty()) continue;
+      for (bool head : {named, false}) {
+        // The largest face for the values with the name alone (larger is earlier in Font).
+        const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
+        for (Font f : every) {
+          if (!fits(all, f, head, false)) continue;
+          if (!found || static_cast<int>(f) < static_cast<int>(face)) {
+            face = f;
+            chosen = {head, fits(all, f, head, true)};
+            lines = &all;
+            found = true;
+          }
+          break;
         }
+        if (found) break;
       }
+    }
 
     int y = 0;
     if (chosen.head) {

@@ -6,8 +6,8 @@ Tile, der Strom im Haus, was offen ist: alles, was ein Template sagen kann.
 
 Auf einem Tile, das eine Zeile hoch und zwei oder mehr Spalten breit ist, stehen die Teile nebeneinander, jeder mit
 Label und Icon darüber und einem Balken unter dem Wert. Jedes andere Tile stapelt sie: Werte nebeneinander, ein Balken
-oder eine Textzeile über die ganze Breite. Der Wert bekommt die größte Schrift, die passt; auf einem kleinen Tile
-weichen zuerst die Labels, dann der Name des Tiles.
+oder eine Textzeile über die ganze Breite. Die Werte bekommen die größte Schrift, die neben dem Namen des Tiles passt;
+die Labels darüber bleiben nur, wo sie die Werte nichts kosten, sonst steht jedes Icon vor seiner Zahl.
 
 ## Einrichten
 
