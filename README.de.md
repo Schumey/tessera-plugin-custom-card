@@ -53,5 +53,5 @@ Ein Sensor ohne `elements` zeigt seinen eigenen Zustand und seine Einheit, so pa
 
 - Die Karte wird neu gezeichnet, sobald sich der Template-Sensor ändert; Home Assistant rendert das Template.
 - Der Wert bekommt die größte Schrift des Bildschirms, die ins Tile passt. Auf einem kleinen Tile weichen zuerst die
-  Labels, die Zahlen bleiben, und der Name des Tiles geht zuletzt.
+  Labels (das Icon eines Werts steht dann vor der Zahl), die Zahlen bleiben, und der Name des Tiles geht zuletzt.
 - Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile.

@@ -53,5 +53,5 @@ A sensor without `elements` shows its own state and unit, so the tile works with
 
 - The card is drawn again whenever the template sensor changes; Home Assistant renders the template.
 - The value takes the largest of the screen's fonts that fits the tile. On a small tile the labels give way before the
-  numbers, and the tile's name goes last.
+  numbers (a value's icon then stands before it), and the tile's name goes last.
 - The tile's background colour is set in the editor, as for every tile.

@@ -215,13 +215,24 @@ class CardTile : public tessera::Tile {
     return part.unit.empty() ? 0 : ui::px(3) + ui::text_width(part.unit, unit_face);
   }
 
+  // A value's icon in front of it, when there is no row for the words above it: the tile's icon size where the
+  // value is that tall, else the small one.
+  static Font inline_icon(Font face) {
+    return ui::line_height(Font::ICON) <= ui::line_height(face) ? Font::ICON : Font::ICON_SMALL;
+  }
+  int icon_room(const Part &part, Font face) const {
+    return part.icon ? ui::text_width(ui::icon(part.icon), inline_icon(face)) + ui::px(4) : 0;
+  }
+
   bool fits(const std::vector<Line> &all, Font face, bool head, bool labels) const {
     int used = head ? ui::line_height(Font::TITLE) + gap() : 0;
     for (const Line &line : all) {
       if (line.kind == Kind::VALUE) {
         const int column = column_width(line.count);
         for (int i = line.first; i < line.first + line.count; ++i)
-          if (ui::text_width(parts_[i].value, face) + unit_width(parts_[i], Font::BODY) > column) return false;
+          if ((labels ? 0 : icon_room(parts_[i], face)) + ui::text_width(parts_[i].value, face) +
+                  unit_width(parts_[i], Font::BODY) > column)
+            return false;
       }
       used += line_height(line, face, labels);
     }
@@ -291,6 +302,7 @@ class CardTile : public tessera::Tile {
     if (part.icon) {
       const std::string glyph = ui::icon(part.icon);
       const int w = ui::text_width(glyph, Font::ICON_SMALL), ih = ui::line_height(Font::ICON_SMALL);
+      ui::set_font(s.icon, Font::ICON_SMALL);
       ui::set_text(s.icon, glyph);
       lv_obj_set_size(s.icon, w, ih);
       lv_obj_set_pos(s.icon, x, y + (h - ih) / 2);
@@ -338,8 +350,23 @@ class CardTile : public tessera::Tile {
         const Part &part = parts_[line.first + k];
         Slot &s = slots_[line.first + k];
         const int x = k * (column + column_gap());
-        if (words) place_words(s, part, x, y, row_height(), column, Font::BODY, s.label, part.label);
-        place_value(s, part, face, Font::BODY, x, y + (words ? row_height() : 0), column);
+        if (words) {
+          place_words(s, part, x, y, row_height(), column, Font::BODY, s.label, part.label);
+          place_value(s, part, face, Font::BODY, x, y + row_height(), column);
+        } else {
+          // No row for the words: the icon stands before the number, centred on it, and says what it is.
+          const int room = icon_room(part, face);
+          if (room) {
+            const Font icon_face = inline_icon(face);
+            const int ih = ui::line_height(icon_face);
+            ui::set_font(s.icon, icon_face);
+            ui::set_text(s.icon, ui::icon(part.icon));
+            lv_obj_set_size(s.icon, room - ui::px(4), ih);
+            lv_obj_set_pos(s.icon, x, y + (ui::line_height(face) - ih) / 2);
+            show(s.icon, true);
+          }
+          place_value(s, part, face, Font::BODY, x + room, y, column - room);
+        }
       }
       return;
     }
