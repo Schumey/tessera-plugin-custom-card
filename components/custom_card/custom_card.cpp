@@ -403,7 +403,7 @@ class CardTile : public tessera::Tile {
   static lv_color_t ink_of(uint32_t own) {
     const uint32_t r = own >> 16 & 0xFF, g = own >> 8 & 0xFF, b = own & 0xFF;
     const bool light = r * 299 + g * 587 + b * 114 > 150000;
-    return theme::rgb(light && !theme::dark ? theme::mix(own, theme::hex(theme::INK), 150) : own);
+    return theme::rgb(light && !theme::dark ? theme::mix(own, theme::hex(theme::INK), 100) : own);
   }
 
   // The colours: a part's own colour paints its value, its icon and its bar, the rest follows the look.
