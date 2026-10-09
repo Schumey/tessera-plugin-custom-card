@@ -26,6 +26,6 @@ tiles:
     example: tile_example
     preview: { title: "{name}", value: "{state}" }
 
-# A tap on the tile opens its parts large over the page, with their labels.
+# The card a tap on the tile is to open; the tile does not open it yet (README, plugin API 0.5 core).
 cards:
   - { id: detail, name: card_name }
