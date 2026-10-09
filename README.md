@@ -16,7 +16,7 @@ the values nothing, else each icon stands before its number.
    is a larger one, with levels for the humidity and the CO2.
 2. In Tessera, open **Plugins**, choose **Custom card** and tick your screens. Each screen builds once.
 3. In Layout, place the **Custom card** tile from the library's Plugins group, at any size, and choose the template
-   sensor in its inspector.
+   sensor in its inspector. It offers the sensors that have an `elements` attribute.
 
 ## An example
 
@@ -58,7 +58,7 @@ name from the editor's icon picker, with or without `mdi:`.
   template, round values there, and write the decimal sign you want.
 - At most six parts, each at most 48 bytes: Tessera cuts longer texts, so keep labels short.
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
-- A sensor without `elements` shows its own state and unit, so the tile works with any sensor.
+- When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
 - The tile's background colour is set in the editor, as for every tile.
 
 ## How it works

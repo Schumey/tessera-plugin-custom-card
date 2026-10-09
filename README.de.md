@@ -17,7 +17,7 @@ die Labels darüber bleiben nur, wo sie die Werte nichts kosten, sonst steht jed
    ist ein größeres Beispiel, mit Stufen für Feuchte und CO2.
 2. Öffne in Tessera **Plugins**, wähle **Eigene Karte** und hake deine Bildschirme an. Jeder Bildschirm baut einmal neu.
 3. Platziere im Layout das Tile **Eigene Karte** aus der Gruppe Plugins der Bibliothek, in jeder Größe, und wähle im
-   Inspector den Template-Sensor.
+   Inspector den Template-Sensor. Er bietet die Sensoren an, die ein Attribut `elements` haben.
 
 ## Ein Beispiel
 
@@ -60,7 +60,7 @@ und den Balken. Ein Icon ist ein Name aus der Icon-Auswahl des Editors, mit oder
 - Höchstens sechs Teile, jeder höchstens 48 Bytes: Tessera kürzt längere Texte, also Labels kurz halten.
 - Die Schrift eines Werts richtet sich nach seiner Form, nicht nach den Ziffern, so behält das Tile seine Größe, wenn
   sich ein Wert ändert.
-- Ein Sensor ohne `elements` zeigt seinen eigenen Zustand und seine Einheit, so passt das Tile zu jedem Sensor.
+- Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` zurück ist.
 - Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile.
 
 ## So funktioniert es
