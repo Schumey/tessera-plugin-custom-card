@@ -8,6 +8,7 @@ Auf einem Tile, das eine Zeile hoch und zwei oder mehr Spalten breit ist, stehen
 Label und Icon darüber und einem Balken unter dem Wert. Jedes andere Tile stapelt sie: Werte nebeneinander, ein Balken
 oder eine Textzeile über die ganze Breite. Die Werte bekommen die größte Schrift, die neben dem Namen des Tiles passt;
 die Labels darüber bleiben nur, wo sie die Werte nichts kosten, sonst steht jedes Icon vor seiner Zahl.
+Ein Label ohne Icon und ohne Farbe bleibt immer.
 
 ## Einrichten
 

@@ -291,7 +291,7 @@ class Drawing {
         for (int i = line.first; i < line.first + line.count; ++i) {
           const Part &part = parts_[i];
           if (part.kind == Kind::TEXT) continue;
-          const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(4);
+          const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(6);
           if (mark + ui::text_width(shape(part.value), face) + unit_width(part) > column) return false;
         }
       }
@@ -322,23 +322,31 @@ class Drawing {
     Try chosen = {false, false};
     const std::vector<Line> *lines = &arrangements[1];
     bool found = false;
-    for (const std::vector<Line> &all : arrangements) {
-      if (all.empty()) continue;
-      for (bool head : {named, false}) {
-        // The largest face for the values with the name alone (larger is earlier in Font).
-        const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
-        for (Font f : every) {
-          if (!fits(all, f, head, false)) continue;
-          if (!found || static_cast<int>(f) < static_cast<int>(face)) {
-            face = f;
-            chosen = {head, fits(all, f, head, true)};
-            lines = &all;
-            found = true;
+    // A part whose label has no icon or colour to stand in for it keeps the row of labels, whatever it costs: without
+    // it nothing would say what its number is.
+    bool unmarked = false;
+    for (const Part &part : parts_)
+      if (part.kind != Kind::TEXT && !part.label.empty() && !has_mark(part)) unmarked = true;
+    for (bool labelled : {unmarked, false}) {
+      for (const std::vector<Line> &all : arrangements) {
+        if (all.empty()) continue;
+        for (bool head : {named, false}) {
+          // The largest face for the values with the name alone (larger is earlier in Font).
+          const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
+          for (Font f : every) {
+            if (!fits(all, f, head, labelled)) continue;
+            if (!found || static_cast<int>(f) < static_cast<int>(face)) {
+              face = f;
+              chosen = {head, labelled || fits(all, f, head, true)};
+              lines = &all;
+              found = true;
+            }
+            break;
           }
-          break;
+          if (found) break;
         }
-        if (found) break;
       }
+      if (found) break;
     }
 
     int y = 0;
@@ -473,7 +481,7 @@ class Drawing {
         vy += words_row();
       } else if (has_mark(part)) {
         // No row for the words: the mark stands before the number, centred on it, and says what it is.
-        room = place_mark(s, part, x, y, ui::line_height(face), inline_icon(face)) + ui::px(4);
+        room = place_mark(s, part, x, y, ui::line_height(face), inline_icon(face)) + ui::px(6);
       }
       place_value(s, part, face, x + room, vy, column - room);
       if (part.kind == Kind::BAR) place_bar(s, part, x, vy + ui::line_height(face) + ui::px(4), column);
