@@ -101,35 +101,40 @@ static bool parse(const std::string &line, Part *part) {
 // digit changes, and the arrangement chosen for the shape of the tile: a tile one row high and two or more columns
 // wide puts every part side by side, any other stacks them.
 
-class CardTile : public tessera::Tile {
+// The parts of a card on one drawing area: the tile's, or the card's a tap opens over the page. Both get the same data,
+// the sensor's state, name and attributes.
+class Drawing {
  public:
-  explicit CardTile(const tessera::Plugin *plugin) : plugin_(plugin) {}
+  explicit Drawing(const tessera::Plugin *plugin) : plugin_(plugin) {}
 
-  void create(const tessera::TileContext &c) override {
-    width_ = c.width;
-    height_ = c.height;
-    flat_ = c.rows == 1 && c.columns >= 2;
-    name_ = c.name ? c.name : "";
-    head_ = ui::label(c.parent, Font::TITLE, theme::INK);
-    note_ = ui::label(c.parent, Font::BODY, theme::MUTED);
+  // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead).
+  void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled) {
+    width_ = width;
+    height_ = height;
+    flat_ = flat;
+    name_ = name;
+    titled_ = titled;
+    head_ = ui::label(parent, Font::TITLE, theme::INK);
+    note_ = ui::label(parent, Font::BODY, theme::MUTED);
     lv_obj_set_style_text_align(note_, LV_TEXT_ALIGN_CENTER, 0);
     for (Slot &s : slots_) {
-      s.icon = ui::label(c.parent, Font::ICON_SMALL, theme::MUTED);
-      s.dot = ui::block(c.parent, theme::MUTED);
+      s.icon = ui::label(parent, Font::ICON_SMALL, theme::MUTED);
+      s.dot = ui::block(parent, theme::MUTED);
       lv_obj_set_style_radius(s.dot, LV_RADIUS_CIRCLE, 0);
-      s.label = ui::label(c.parent, Font::BODY, theme::MUTED);
-      s.value = ui::label(c.parent, Font::VALUE, theme::INK);
-      s.unit = ui::label(c.parent, Font::BODY, theme::MUTED);
-      s.track = ui::block(c.parent, theme::TRACK);
+      s.label = ui::label(parent, Font::BODY, theme::MUTED);
+      s.value = ui::label(parent, Font::VALUE, theme::INK);
+      s.unit = ui::label(parent, Font::BODY, theme::MUTED);
+      s.track = ui::block(parent, theme::TRACK);
       s.fill = ui::block(s.track, theme::ACCENT);
     }
     hide_all();
   }
 
-  void on_state(JsonObjectConst data) override {
+  // What the sensor says now: its parts, laid out and painted.
+  void take(JsonObjectConst data) {
     parts_.clear();
     note_text_.clear();
-    shown_name_ = !name_.empty() ? name_ : std::string(data["name"] | "");
+    shown_name_ = !titled_ ? "" : !name_.empty() ? name_ : std::string(data["name"] | "");
     const std::string wait = data["wait"] | "";
     JsonVariantConst elements = data["attributes"]["elements"];
     bool described = false;
@@ -164,7 +169,27 @@ class CardTile : public tessera::Tile {
     paint();
   }
 
-  void on_theme() override { paint(); }
+  // The colours: words and numbers follow the look; a part's own colour paints only its mark and its bar.
+  void paint() {
+    ui::set_color(head_, theme::INK);
+    ui::set_color(note_, theme::MUTED);
+    for (size_t i = 0; i < MAX_PARTS; ++i) {
+      Slot &s = slots_[i];
+      const uint32_t own = i < parts_.size() ? parts_[i].colour : 0;
+      ui::set_color(s.label, theme::MUTED);
+      ui::set_color(s.unit, theme::MUTED);
+      ui::set_color(s.value, theme::INK);
+      lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
+      if (own) {
+        lv_obj_set_style_text_color(s.icon, theme::rgb(own), 0);
+        lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
+        lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
+      } else {
+        ui::set_color(s.icon, theme::MUTED);
+        lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
+      }
+    }
+  }
 
  private:
   struct Slot {
@@ -455,39 +480,57 @@ class CardTile : public tessera::Tile {
     }
   }
 
-  // The colours: words and numbers follow the look; a part's own colour paints only its mark and its bar.
-  void paint() {
-    ui::set_color(head_, theme::INK);
-    ui::set_color(note_, theme::MUTED);
-    for (size_t i = 0; i < MAX_PARTS; ++i) {
-      Slot &s = slots_[i];
-      const uint32_t own = i < parts_.size() ? parts_[i].colour : 0;
-      ui::set_color(s.label, theme::MUTED);
-      ui::set_color(s.unit, theme::MUTED);
-      ui::set_color(s.value, theme::INK);
-      lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
-      if (own) {
-        lv_obj_set_style_text_color(s.icon, theme::rgb(own), 0);
-        lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
-        lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
-      } else {
-        ui::set_color(s.icon, theme::MUTED);
-        lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
-      }
-    }
-  }
-
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
-  bool flat_ = false;
+  bool flat_ = false, titled_ = true;
   std::string name_, shown_name_, note_text_;
   std::vector<Part> parts_;
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};
 };
 
+// The tile: its parts on the card's area; a tap opens them large over the page.
+class CardTile : public tessera::Tile {
+ public:
+  explicit CardTile(const tessera::Plugin *plugin) : plugin_(plugin), drawing_(plugin) {}
+
+  void create(const tessera::TileContext &c) override {
+    entity_ = c.entity ? c.entity : "";
+    tile_ = c.tile;
+    // A tile one row high and two columns or more puts its parts side by side, as the departures plugin turns into a
+    // list on two columns.
+    drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "", true);
+  }
+  void on_state(JsonObjectConst data) override { drawing_.take(data); }
+  void on_theme() override { drawing_.paint(); }
+  void on_tap() override { tessera::open_card(plugin_->plugin_id(), "detail", entity_, tile_); }
+
+ private:
+  const tessera::Plugin *plugin_;
+  Drawing drawing_;
+  std::string entity_;
+  int tile_ = -1;
+};
+
+// The card a tap on the tile opens: the same parts, as large as a card's room takes, with their labels where they fit.
+// Tessera draws its frame, its back key and the tile's name as its title.
+class DetailCard : public tessera::Card {
+ public:
+  explicit DetailCard(const tessera::Plugin *plugin) : drawing_(plugin) {}
+
+  void open(const tessera::CardContext &c) override {
+    drawing_.create(c.parent, c.width, c.height, false, "", false);
+  }
+  void on_state(JsonObjectConst data) override { drawing_.take(data); }
+  void on_theme() override { drawing_.paint(); }
+
+ private:
+  Drawing drawing_;
+};
+
 void CustomCard::setup() {
   add_tile("card", [this]() { return new CardTile(this); });
+  add_card("detail", [this]() { return new DetailCard(this); });
 }
 
 }  // namespace esphome::custom_card
