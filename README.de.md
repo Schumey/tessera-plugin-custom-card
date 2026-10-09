@@ -14,7 +14,7 @@ Ein Tippen öffnet die Teile groß auf einer Karte über der Seite, mit ihren La
 
 1. Lege in Home Assistant einen Template-Sensor an, dessen Attribut `elements` die Teile der Karte aufzählt, einen
    Text je Teil (unten), füge ihn in die `configuration.yaml` ein und lade die Template-Entitäten neu.
-   [examples/living_room.yaml](https://github.com/StofLE/tessera-custom-card/blob/main/examples/living_room.yaml)
+   [examples/living_room.yaml](https://github.com/StofLE/tessera-plugin-custom-card/blob/main/examples/living_room.yaml)
    ist ein größeres Beispiel, mit Stufen für Feuchte und CO2.
 2. Öffne in Tessera **Plugins**, wähle **Eigene Karte** und hake deine Bildschirme an. Jeder Bildschirm baut einmal neu.
 3. Platziere im Layout das Tile **Eigene Karte** aus der Gruppe Plugins der Bibliothek, in jeder Größe, und wähle im
