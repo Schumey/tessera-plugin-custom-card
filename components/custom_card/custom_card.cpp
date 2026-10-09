@@ -371,6 +371,14 @@ class CardTile : public tessera::Tile {
     show(s.fill, filled > 0);
   }
 
+  // A part's colour for words and icons: the key colour itself, except a light one (yellow) in the light look, which
+  // takes some ink so it reads on a light card. The bar keeps the key colour.
+  static lv_color_t ink_of(uint32_t own) {
+    const uint32_t r = own >> 16 & 0xFF, g = own >> 8 & 0xFF, b = own & 0xFF;
+    const bool light = r * 299 + g * 587 + b * 114 > 150000;
+    return theme::rgb(light && !theme::dark ? theme::mix(own, theme::hex(theme::INK), 150) : own);
+  }
+
   // The colours: a part's own colour paints its value, its icon and its bar, the rest follows the look.
   void paint() {
     ui::set_color(head_, theme::INK);
@@ -382,8 +390,8 @@ class CardTile : public tessera::Tile {
       ui::set_color(s.unit, theme::MUTED);
       lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
       if (own) {
-        lv_obj_set_style_text_color(s.value, theme::rgb(own), 0);
-        lv_obj_set_style_text_color(s.icon, theme::rgb(own), 0);
+        lv_obj_set_style_text_color(s.value, ink_of(own), 0);
+        lv_obj_set_style_text_color(s.icon, ink_of(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
       } else {
         ui::set_color(s.value, theme::INK);
