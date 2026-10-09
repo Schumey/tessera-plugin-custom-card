@@ -10,12 +10,32 @@ The value takes the largest face that fits; on a small tile the labels give way 
 
 ## Set up
 
-1. In Home Assistant, make a template sensor whose attribute `elements` lists the card's parts, one text per part.
-   [examples/living_room.yaml](examples/living_room.yaml) is a complete one to copy: change its entity ids, put it in
-   `configuration.yaml`, and reload Template entities.
+1. In Home Assistant, make a template sensor whose attribute `elements` lists the card's parts, one text per part
+   (below), put it in `configuration.yaml`, and reload Template entities. `examples/living_room.yaml` in the plugin's
+   folder is a larger one, with levels for the humidity and the CO2.
 2. In Tessera, open **Plugins**, choose **Custom card** and tick your screens. Each screen builds once.
 3. In Layout, place the **Custom card** tile from the library's Plugins group, at any size, and choose the template
    sensor in its inspector.
+
+## An example
+
+```yaml
+template:
+  - sensor:
+      - name: Room card
+        state: "{{ states('sensor.room_co2') }}"
+        attributes:
+          elements: >
+            {% set t = states('sensor.room_temp') %}
+            {% set c = states('sensor.room_co2')
+                 | int(0) %}
+            {{ [
+              'value|' ~ t ~ '|°C|Temperature',
+              'bar|' ~ c ~ '|ppm|CO2|'
+                ~ ('green' if c < 800 else 'red')
+                ~ '|molecule-co2|400|2000'
+            ] }}
+```
 
 ## The parts
 

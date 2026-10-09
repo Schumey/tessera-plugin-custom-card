@@ -12,11 +12,31 @@ weichen zuerst die Labels, dann der Name des Tiles.
 ## Einrichten
 
 1. Lege in Home Assistant einen Template-Sensor an, dessen Attribut `elements` die Teile der Karte aufzählt, einen
-   Text je Teil. [examples/living_room.yaml](examples/living_room.yaml) ist ein vollständiges Beispiel zum Kopieren:
-   Entitäten anpassen, in die `configuration.yaml` einfügen und die Template-Entitäten neu laden.
+   Text je Teil (unten), füge ihn in die `configuration.yaml` ein und lade die Template-Entitäten neu.
+   `examples/living_room.yaml` im Ordner des Plugins ist ein größeres Beispiel, mit Stufen für Feuchte und CO2.
 2. Öffne in Tessera **Plugins**, wähle **Eigene Karte** und hake deine Bildschirme an. Jeder Bildschirm baut einmal neu.
 3. Platziere im Layout das Tile **Eigene Karte** aus der Gruppe Plugins der Bibliothek, in jeder Größe, und wähle im
    Inspector den Template-Sensor.
+
+## Ein Beispiel
+
+```yaml
+template:
+  - sensor:
+      - name: Raumkarte
+        state: "{{ states('sensor.room_co2') }}"
+        attributes:
+          elements: >
+            {% set t = states('sensor.room_temp') %}
+            {% set c = states('sensor.room_co2')
+                 | int(0) %}
+            {{ [
+              'value|' ~ t ~ '|°C|Temperatur',
+              'bar|' ~ c ~ '|ppm|CO2|'
+                ~ ('green' if c < 800 else 'red')
+                ~ '|molecule-co2|400|2000'
+            ] }}
+```
 
 ## Die Teile
 
