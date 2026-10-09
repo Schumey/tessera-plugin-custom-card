@@ -41,8 +41,9 @@ template:
 | `bar` | `bar\|<Wert>\|<Einheit>\|<Label>\|<Farbe>\|<Icon>\|<min>\|<max>` | Das Label mit dem Wert rechts daneben, darunter ein Balken von `min` (0) bis `max` (100). |
 | `text` | `text\|<Worte>\|\|\|<Farbe>\|<Icon>` | Eine Zeile Text mit einem Icon davor. |
 
-- **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Sie färbt den Wert, das
-  Icon und den Balken, in Hell und Dunkel gleich. Stufen berechnest du im Template, wie oben.
+- **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`, in Hell und Dunkel
+  gleich. Wie auf Tesseras eigenen Karten markiert sie einen Teil und färbt nie seine Worte: Sie färbt das Icon (einen
+  Punkt, wo der Teil kein Icon hat) und den Balken. Stufen berechnest du im Template, wie oben.
 - **Icon**: ein Name aus der Icon-Auswahl des Editors, mit oder ohne `mdi:`. Ein anderes Icon bleibt leer.
 - Höchstens sechs Teile, und jeder Teil höchstens 48 Bytes: Tessera kürzt längere Texte. Halte Labels kurz.
 - Der Bildschirm schreibt einen Wert so, wie das Template ihn liefert. Runde ihn dort und wähle dort das Dezimalzeichen.
@@ -52,6 +53,9 @@ Ein Sensor ohne `elements` zeigt seinen eigenen Zustand und seine Einheit, so pa
 ## Gut zu wissen
 
 - Die Karte wird neu gezeichnet, sobald sich der Template-Sensor ändert; Home Assistant rendert das Template.
-- Der Wert bekommt die größte Schrift des Bildschirms, die ins Tile passt. Auf einem kleinen Tile weichen zuerst die
-  Labels (das Icon eines Werts steht dann vor der Zahl), die Zahlen bleiben, und der Name des Tiles geht zuletzt.
+- Der Wert bekommt die größte Schrift des Bildschirms, die ins Tile passt, gewählt nach der Form des Werts, so dass
+  die Karte ihre Größe behält, wenn sich eine Ziffer ändert. Auf einem kleinen Tile weichen zuerst die Labels (das Icon
+  eines Werts steht dann vor der Zahl), die Zahlen bleiben, und der Name des Tiles geht zuletzt.
+- Ein Tile, das eine Zeile hoch und zwei oder mehr Spalten breit ist, stellt die Teile nebeneinander, jeden als Spalte
+  mit seinem Balken unter dem Wert; jedes andere Tile stapelt sie.
 - Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile.

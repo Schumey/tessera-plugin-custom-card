@@ -21,8 +21,8 @@ namespace ui = tessera::ui;
 //   text|<words>|||<colour>|<icon>
 //
 // Fields at the end may be left out. A colour is one of the key colours of theme.h (red, orange, yellow, green, mint,
-// blue, purple, pink, gray), the same in light and dark; an icon is a name of Tessera's set (icons.h). Values that
-// follow each other stand side by side, four at the most; a bar and a text take a line of their own.
+// blue, purple, pink, gray), the same in light and dark: it paints the part's icon (a dot where it has none) and its
+// bar, never its words. An icon is a name of Tessera's set (icons.h).
 
 static constexpr int MAX_PARTS = 6;
 static constexpr int MAX_IN_ROW = 4;
@@ -95,6 +95,11 @@ static bool parse(const std::string &line, Part *part) {
 }
 
 // ---- The tile ----
+//
+// As Tessera's own plugins draw: words and numbers in the look's ink, a part's colour only as a mark (its icon, a dot
+// where it has none, and its bar), the value's face chosen for the shape of the value so it never jumps a size when a
+// digit changes, and the arrangement chosen for the shape of the tile: a tile one row high and two or more columns
+// wide puts every part side by side, any other stacks them.
 
 class CardTile : public tessera::Tile {
  public:
@@ -103,12 +108,15 @@ class CardTile : public tessera::Tile {
   void create(const tessera::TileContext &c) override {
     width_ = c.width;
     height_ = c.height;
+    flat_ = c.rows == 1 && c.columns >= 2;
     name_ = c.name ? c.name : "";
     head_ = ui::label(c.parent, Font::TITLE, theme::INK);
     note_ = ui::label(c.parent, Font::BODY, theme::MUTED);
     lv_obj_set_style_text_align(note_, LV_TEXT_ALIGN_CENTER, 0);
     for (Slot &s : slots_) {
       s.icon = ui::label(c.parent, Font::ICON_SMALL, theme::MUTED);
+      s.dot = ui::block(c.parent, theme::MUTED);
+      lv_obj_set_style_radius(s.dot, LV_RADIUS_CIRCLE, 0);
       s.label = ui::label(c.parent, Font::BODY, theme::MUTED);
       s.value = ui::label(c.parent, Font::VALUE, theme::INK);
       s.unit = ui::label(c.parent, Font::BODY, theme::MUTED);
@@ -160,11 +168,13 @@ class CardTile : public tessera::Tile {
 
  private:
   struct Slot {
-    lv_obj_t *icon{}, *label{}, *value{}, *unit{}, *track{}, *fill{};
+    lv_obj_t *icon{}, *dot{}, *label{}, *value{}, *unit{}, *track{}, *fill{};
   };
+  // Parts side by side in columns, or a bar or a text alone across the width (`across`: its words left, its value
+  // right, the bar under them).
   struct Line {
-    Kind kind;
     int first, count;
+    bool across;
   };
 
   static void show(lv_obj_t *obj, bool shown) {
@@ -176,63 +186,89 @@ class CardTile : public tessera::Tile {
     show(head_, false);
     show(note_, false);
     for (Slot &s : slots_)
-      for (lv_obj_t *obj : {s.icon, s.label, s.value, s.unit, s.track}) show(obj, false);
+      for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track}) show(obj, false);
   }
 
-  // Values in a row, bars and texts alone.
-  std::vector<Line> lines() const {
+  // Stacked: values that follow each other side by side, a bar and a text alone across the width.
+  std::vector<Line> stacked() const {
     std::vector<Line> out;
     for (int i = 0; i < (int) parts_.size(); ++i) {
-      const Kind kind = parts_[i].kind;
-      if (kind == Kind::VALUE && !out.empty() && out.back().kind == Kind::VALUE && out.back().count < MAX_IN_ROW)
+      const bool value = parts_[i].kind == Kind::VALUE;
+      if (value && !out.empty() && !out.back().across && out.back().count < MAX_IN_ROW)
         ++out.back().count;
       else
-        out.push_back({kind, i, 1});
+        out.push_back({i, 1, !value});
     }
     return out;
   }
+  // Side by side: every part a column of its own, on a wide tile one row high.
+  std::vector<Line> side_by_side() const {
+    if (!flat_ || parts_.empty() || parts_.size() > MAX_IN_ROW) return {};
+    return {{0, (int) parts_.size(), false}};
+  }
 
-  int row_height() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
+  // The value's digits as zeros: the face is chosen for the shape of a value, never for its digits (as the departures
+  // plugin does), so a value that ticks from 999 to 965 keeps its size.
+  static std::string shape(std::string text) {
+    for (char &c : text)
+      if (c >= '1' && c <= '9') c = '0';
+    return text;
+  }
+
+  int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
   int bar_thickness() const { return ui::px(ui::large() ? 10 : 6); }
+  int dot_size() const { return ui::px(ui::large() ? 12 : 8); }
   int gap() const { return ui::px(ui::large() ? 8 : 4); }
   int column_gap() const { return ui::px(ui::large() ? 16 : 8); }
   int column_width(int count) const { return (width_ - (count - 1) * column_gap()) / count; }
+
+  // A part's mark: its icon, or a dot in its colour where it has no icon, or nothing.
+  bool has_mark(const Part &part) const { return part.icon || part.colour; }
   bool has_words(const Line &line) const {
     for (int i = line.first; i < line.first + line.count; ++i)
-      if (!parts_[i].label.empty() || parts_[i].icon) return true;
+      if (!parts_[i].label.empty() || has_mark(parts_[i])) return true;
     return false;
   }
-
-  int line_height(const Line &line, Font face, bool labels) const {
-    switch (line.kind) {
-      case Kind::VALUE: return (labels && has_words(line) ? row_height() : 0) + ui::line_height(face);
-      case Kind::BAR: return ui::line_height(Font::BODY_LARGE) + ui::px(4) + bar_thickness();
-      default: return std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL));
-    }
-  }
-
-  int unit_width(const Part &part, Font unit_face) const {
-    return part.unit.empty() ? 0 : ui::px(3) + ui::text_width(part.unit, unit_face);
-  }
-
-  // A value's icon in front of it, when there is no row for the words above it: the tile's icon size where the
-  // value is that tall, else the small one.
+  // A mark in front of a value, when there is no row for the words above it: the tile's icon size where the value is
+  // that tall, else the small one.
   static Font inline_icon(Font face) {
     return ui::line_height(Font::ICON) <= ui::line_height(face) ? Font::ICON : Font::ICON_SMALL;
   }
-  int icon_room(const Part &part, Font face) const {
-    return part.icon ? ui::text_width(ui::icon(part.icon), inline_icon(face)) + ui::px(4) : 0;
+  int mark_width(const Part &part, Font icon_face) const {
+    return part.icon ? ui::text_width(ui::icon(part.icon), icon_face) : part.colour ? dot_size() : 0;
+  }
+  int unit_width(const Part &part) const {
+    return part.unit.empty() ? 0 : ui::px(3) + ui::text_width(part.unit, Font::BODY);
+  }
+
+  int line_height(const Line &line, Font face, bool labels) const {
+    const Part &first = parts_[line.first];
+    if (line.across)
+      return first.kind == Kind::BAR ? ui::line_height(Font::BODY_LARGE) + ui::px(4) + bar_thickness()
+                                     : std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL));
+    const int words = labels && has_words(line) ? words_row() : 0;
+    int h = 0;
+    for (int i = line.first; i < line.first + line.count; ++i) {
+      switch (parts_[i].kind) {
+        case Kind::VALUE: h = std::max(h, words + ui::line_height(face)); break;
+        case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
+        default: h = std::max(h, std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL)));
+      }
+    }
+    return h;
   }
 
   bool fits(const std::vector<Line> &all, Font face, bool head, bool labels) const {
     int used = head ? ui::line_height(Font::TITLE) + gap() : 0;
     for (const Line &line : all) {
-      if (line.kind == Kind::VALUE) {
+      if (!line.across) {
         const int column = column_width(line.count);
-        for (int i = line.first; i < line.first + line.count; ++i)
-          if ((labels ? 0 : icon_room(parts_[i], face)) + ui::text_width(parts_[i].value, face) +
-                  unit_width(parts_[i], Font::BODY) > column)
-            return false;
+        for (int i = line.first; i < line.first + line.count; ++i) {
+          const Part &part = parts_[i];
+          if (part.kind == Kind::TEXT) continue;
+          const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(4);
+          if (mark + ui::text_width(shape(part.value), face) + unit_width(part) > column) return false;
+        }
       }
       used += line_height(line, face, labels);
     }
@@ -240,7 +276,8 @@ class CardTile : public tessera::Tile {
     return used <= height_;
   }
 
-  // Lay the parts out: the largest value font that fits; words give way before numbers, the name last.
+  // Lay the parts out: the largest value face that fits, side by side on a wide flat tile when a large face fits there;
+  // the words give way before the numbers, the tile's name last.
   void layout() {
     hide_all();
     if (!note_text_.empty()) {
@@ -251,7 +288,7 @@ class CardTile : public tessera::Tile {
       show(note_, true);
       return;
     }
-    const std::vector<Line> all = lines();
+    const std::vector<Line> arrangements[] = {side_by_side(), stacked()};
     const bool named = !shown_name_.empty();
     struct Try { bool head, labels; };
     const Try tries[] = {{named, true}, {named, false}, {false, false}};
@@ -259,20 +296,24 @@ class CardTile : public tessera::Tile {
     const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
     Font face = Font::BODY;
     Try chosen = tries[2];
+    const std::vector<Line> *lines = &arrangements[1];
     bool found = false;
-    for (int pass = 0; pass < 2 && !found; ++pass) {
-      for (const Try &t : tries) {
-        const Font *first = pass ? std::begin(every) : std::begin(large);
-        const Font *last = pass ? std::end(every) : std::end(large);
-        for (const Font *f = first; f != last && !found; ++f)
-          if (fits(all, *f, t.head, t.labels)) {
-            face = *f;
-            chosen = t;
-            found = true;
-          }
-        if (found) break;
+    for (int pass = 0; pass < 2 && !found; ++pass)
+      for (const std::vector<Line> &all : arrangements) {
+        if (all.empty() || found) continue;
+        for (const Try &t : tries) {
+          const Font *first = pass ? std::begin(every) : std::begin(large);
+          const Font *last = pass ? std::end(every) : std::end(large);
+          for (const Font *f = first; f != last && !found; ++f)
+            if (fits(all, *f, t.head, t.labels)) {
+              face = *f;
+              chosen = t;
+              lines = &all;
+              found = true;
+            }
+          if (found) break;
+        }
       }
-    }
 
     int y = 0;
     if (chosen.head) {
@@ -284,31 +325,44 @@ class CardTile : public tessera::Tile {
       y = h + gap();
     }
     int content = 0;
-    for (const Line &line : all) content += line_height(line, face, chosen.labels);
+    for (const Line &line : *lines) content += line_height(line, face, chosen.labels);
     const int spare = std::max(0, height_ - y - content);
-    const int n = (int) all.size();
+    const int n = (int) lines->size();
     const int between = n > 1 ? std::max(gap(), spare / (n + 1)) : 0;
     y += std::max(0, (spare - between * (n - 1)) / 2);
-    for (const Line &line : all) {
+    for (const Line &line : *lines) {
       place(line, face, chosen.labels, y);
       y += line_height(line, face, chosen.labels) + between;
     }
   }
 
-  // An icon and words beside it, centred on a row of height `h` at (x, y), at most `room` wide.
-  int place_words(Slot &s, const Part &part, int x, int y, int h, int room, Font words_face, lv_obj_t *words,
-                  const std::string &text) {
-    int left = x;
+  // A part's mark at (x, y), centred on a row `h` high, in `icon_face`; returns its width.
+  int place_mark(Slot &s, const Part &part, int x, int y, int h, Font icon_face) {
     if (part.icon) {
       const std::string glyph = ui::icon(part.icon);
-      const int w = ui::text_width(glyph, Font::ICON_SMALL), ih = ui::line_height(Font::ICON_SMALL);
-      ui::set_font(s.icon, Font::ICON_SMALL);
+      const int w = ui::text_width(glyph, icon_face), ih = ui::line_height(icon_face);
+      ui::set_font(s.icon, icon_face);
       ui::set_text(s.icon, glyph);
       lv_obj_set_size(s.icon, w, ih);
       lv_obj_set_pos(s.icon, x, y + (h - ih) / 2);
       show(s.icon, true);
-      left += w + ui::px(4);
+      return w;
     }
+    if (part.colour) {
+      const int d = dot_size();
+      lv_obj_set_size(s.dot, d, d);
+      lv_obj_set_pos(s.dot, x, y + (h - d) / 2);
+      show(s.dot, true);
+      return d;
+    }
+    return 0;
+  }
+
+  // The mark and words beside it, centred on a row `h` high at (x, y), at most `room` wide.
+  void place_words(Slot &s, const Part &part, int x, int y, int h, int room, Font words_face, lv_obj_t *words,
+                   const std::string &text) {
+    const int mark = place_mark(s, part, x, y, h, Font::ICON_SMALL);
+    const int left = x + (mark ? mark + ui::px(6) : 0);
     if (!text.empty() && x + room - left > 0) {
       const int wh = ui::line_height(words_face);
       ui::set_font(words, words_face);
@@ -317,12 +371,11 @@ class CardTile : public tessera::Tile {
       lv_obj_set_pos(words, left, y + (h - wh) / 2);
       show(words, true);
     }
-    return left;
   }
 
   // A value and its unit after it, on the value's baseline.
-  void place_value(Slot &s, const Part &part, Font face, Font unit_face, int x, int y, int room) {
-    const int uw = unit_width(part, unit_face);
+  void place_value(Slot &s, const Part &part, Font face, int x, int y, int room) {
+    const int uw = unit_width(part);
     const int vw = std::min(ui::text_width(part.value, face), std::max(1, room - uw));
     const int vh = ui::line_height(face);
     ui::set_font(s.value, face);
@@ -331,10 +384,10 @@ class CardTile : public tessera::Tile {
     lv_obj_set_pos(s.value, x, y);
     show(s.value, true);
     if (!part.unit.empty()) {
-      const lv_font_t *big = ui::font(face), *small = ui::font(unit_face);
-      const int uh = ui::line_height(unit_face);
+      const lv_font_t *big = ui::font(face), *small = ui::font(Font::BODY);
+      const int uh = ui::line_height(Font::BODY);
       const int baseline = y + vh - (big ? big->base_line : 0);
-      ui::set_font(s.unit, unit_face);
+      ui::set_font(s.unit, Font::BODY);
       ui::set_text(s.unit, part.unit);
       lv_obj_set_size(s.unit, uw - ui::px(3), uh);
       lv_obj_set_pos(s.unit, x + vw + ui::px(3), baseline - uh + (small ? small->base_line : 0));
@@ -342,71 +395,66 @@ class CardTile : public tessera::Tile {
     }
   }
 
-  void place(const Line &line, Font face, bool labels, int y) {
-    if (line.kind == Kind::VALUE) {
-      const int column = column_width(line.count);
-      const bool words = labels && has_words(line);
-      for (int k = 0; k < line.count; ++k) {
-        const Part &part = parts_[line.first + k];
-        Slot &s = slots_[line.first + k];
-        const int x = k * (column + column_gap());
-        if (words) {
-          place_words(s, part, x, y, row_height(), column, Font::BODY, s.label, part.label);
-          place_value(s, part, face, Font::BODY, x, y + row_height(), column);
-        } else {
-          // No row for the words: the icon stands before the number, centred on it, and says what it is.
-          const int room = icon_room(part, face);
-          if (room) {
-            const Font icon_face = inline_icon(face);
-            const int ih = ui::line_height(icon_face);
-            ui::set_font(s.icon, icon_face);
-            ui::set_text(s.icon, ui::icon(part.icon));
-            lv_obj_set_size(s.icon, room - ui::px(4), ih);
-            lv_obj_set_pos(s.icon, x, y + (ui::line_height(face) - ih) / 2);
-            show(s.icon, true);
-          }
-          place_value(s, part, face, Font::BODY, x + room, y, column - room);
-        }
-      }
-      return;
-    }
-    const Part &part = parts_[line.first];
-    Slot &s = slots_[line.first];
-    if (line.kind == Kind::TEXT) {
-      place_words(s, part, 0, y, line_height(line, face, labels), width_, Font::BODY_LARGE, s.value, part.value);
-      return;
-    }
-    // A bar: its name at the left, the value at the right, the bar under them.
-    const int h = ui::line_height(Font::BODY_LARGE);
-    const int uw = unit_width(part, Font::BODY);
-    const int vw = ui::text_width(part.value, Font::BODY_LARGE);
-    place_value(s, part, Font::BODY_LARGE, Font::BODY, width_ - vw - uw, y, vw + uw);
-    place_words(s, part, 0, y, h, std::max(0, width_ - vw - uw - ui::px(8)), Font::BODY, s.label, part.label);
-    const int thick = bar_thickness(), top = y + h + ui::px(4);
-    lv_obj_set_size(s.track, width_, thick);
-    lv_obj_set_pos(s.track, 0, top);
+  // A bar `width` wide at (x, y), filled from min to max.
+  void place_bar(Slot &s, const Part &part, int x, int y, int width) {
+    const int thick = bar_thickness();
+    lv_obj_set_size(s.track, width, thick);
+    lv_obj_set_pos(s.track, x, y);
     lv_obj_set_style_radius(s.track, thick / 2, 0);
     lv_obj_set_style_radius(s.fill, thick / 2, 0);
     show(s.track, true);
-    float value;
-    float share = 0;
+    float value, share = 0;
     if (number_of(part.value, &value) && part.max > part.min)
       share = std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
-    const int filled = share > 0 ? std::max(thick, (int) std::lround(share * width_)) : 0;
+    const int filled = share > 0 ? std::max(thick, (int) std::lround(share * width)) : 0;
     lv_obj_set_size(s.fill, filled, thick);
     lv_obj_set_pos(s.fill, 0, 0);
     show(s.fill, filled > 0);
   }
 
-  // A part's colour for words and icons: the key colour itself, except a light one (yellow) in the light look, which
-  // takes some ink so it reads on a light card. The bar keeps the key colour.
-  static lv_color_t ink_of(uint32_t own) {
-    const uint32_t r = own >> 16 & 0xFF, g = own >> 8 & 0xFF, b = own & 0xFF;
-    const bool light = r * 299 + g * 587 + b * 114 > 150000;
-    return theme::rgb(light && !theme::dark ? theme::mix(own, theme::hex(theme::INK), 100) : own);
+  void place(const Line &line, Font face, bool labels, int y) {
+    const int h = line_height(line, face, labels);
+    if (line.across) {
+      const Part &part = parts_[line.first];
+      Slot &s = slots_[line.first];
+      if (part.kind == Kind::TEXT) {
+        place_words(s, part, 0, y, h, width_, Font::BODY_LARGE, s.value, part.value);
+        return;
+      }
+      // A bar across the width: its words at the left, the value at the right, the bar under them.
+      const int row = ui::line_height(Font::BODY_LARGE);
+      const int right = ui::text_width(part.value, Font::BODY_LARGE) + unit_width(part);
+      place_value(s, part, Font::BODY_LARGE, width_ - right, y, right);
+      place_words(s, part, 0, y, row, std::max(0, width_ - right - ui::px(8)), Font::BODY, s.label, part.label);
+      place_bar(s, part, 0, y + row + ui::px(4), width_);
+      return;
+    }
+    const int column = column_width(line.count);
+    const bool words = labels && has_words(line);
+    for (int k = 0; k < line.count; ++k) {
+      const Part &part = parts_[line.first + k];
+      Slot &s = slots_[line.first + k];
+      const int x = k * (column + column_gap());
+      if (part.kind == Kind::TEXT) {
+        const int th = std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL));
+        place_words(s, part, x, y + (h - th) / 2, th, column, Font::BODY_LARGE, s.value, part.value);
+        continue;
+      }
+      int vy = y;
+      int room = 0;
+      if (words) {
+        place_words(s, part, x, y, words_row(), column, Font::BODY, s.label, part.label);
+        vy += words_row();
+      } else if (has_mark(part)) {
+        // No row for the words: the mark stands before the number, centred on it, and says what it is.
+        room = place_mark(s, part, x, y, ui::line_height(face), inline_icon(face)) + ui::px(4);
+      }
+      place_value(s, part, face, x + room, vy, column - room);
+      if (part.kind == Kind::BAR) place_bar(s, part, x, vy + ui::line_height(face) + ui::px(4), column);
+    }
   }
 
-  // The colours: a part's own colour paints its value, its icon and its bar, the rest follows the look.
+  // The colours: words and numbers follow the look; a part's own colour paints only its mark and its bar.
   void paint() {
     ui::set_color(head_, theme::INK);
     ui::set_color(note_, theme::MUTED);
@@ -415,13 +463,13 @@ class CardTile : public tessera::Tile {
       const uint32_t own = i < parts_.size() ? parts_[i].colour : 0;
       ui::set_color(s.label, theme::MUTED);
       ui::set_color(s.unit, theme::MUTED);
+      ui::set_color(s.value, theme::INK);
       lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
       if (own) {
-        lv_obj_set_style_text_color(s.value, ink_of(own), 0);
-        lv_obj_set_style_text_color(s.icon, ink_of(own), 0);
+        lv_obj_set_style_text_color(s.icon, theme::rgb(own), 0);
+        lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
       } else {
-        ui::set_color(s.value, theme::INK);
         ui::set_color(s.icon, theme::MUTED);
         lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
       }
@@ -430,6 +478,7 @@ class CardTile : public tessera::Tile {
 
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
+  bool flat_ = false;
   std::string name_, shown_name_, note_text_;
   std::vector<Part> parts_;
   Slot slots_[MAX_PARTS];

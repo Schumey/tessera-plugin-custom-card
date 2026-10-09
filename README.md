@@ -41,8 +41,9 @@ template:
 | `bar` | `bar\|<value>\|<unit>\|<label>\|<colour>\|<icon>\|<min>\|<max>` | The label with the value at its right, a bar from `min` (0) to `max` (100) under them. |
 | `text` | `text\|<words>\|\|\|<colour>\|<icon>` | One line of words with an icon before it. |
 
-- **colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. It paints the value, the
-  icon and the bar, the same in light and dark. Work out levels in the template, as above.
+- **colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`, the same in light and
+  dark. As on Tessera's own cards it marks a part and never paints its words: it colours the icon (a dot where the part
+  has no icon) and the bar. Work out levels in the template, as above.
 - **icon**: a name from the editor's icon picker, with or without `mdi:`. Another icon shows as nothing.
 - At most six parts, and each part at most 48 bytes: Tessera cuts longer texts. Keep labels short.
 - The screen writes a value as the template renders it, so round it and choose the decimal sign there.
@@ -52,6 +53,9 @@ A sensor without `elements` shows its own state and unit, so the tile works with
 ## Good to know
 
 - The card is drawn again whenever the template sensor changes; Home Assistant renders the template.
-- The value takes the largest of the screen's fonts that fits the tile. On a small tile the labels give way before the
-  numbers (a value's icon then stands before it), and the tile's name goes last.
+- The value takes the largest of the screen's fonts that fits the tile, chosen for the shape of the value, so the
+  card keeps its size when a digit changes. On a small tile the labels give way before the numbers (a value's icon
+  then stands before it), and the tile's name goes last.
+- A tile one row high and two or more columns wide puts the parts side by side, every part a column with its bar under
+  its value; every other tile stacks them.
 - The tile's background colour is set in the editor, as for every tile.
