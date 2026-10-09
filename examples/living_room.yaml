@@ -1,0 +1,20 @@
+# A custom card for a living room's climate: the temperature, the humidity in a colour by its level, and the CO2 as a
+# bar from green to red. Put it into configuration.yaml (or a package), change the three entity ids to your own, and
+# reload Template entities (Developer tools, YAML). Then choose "Living room card" as the tile's entity.
+template:
+  - sensor:
+      - name: Living room card
+        unique_id: custom_card_living_room
+        state: "{{ states('sensor.living_room_temperature') }}"
+        attributes:
+          elements: >
+            {% set t = states('sensor.living_room_temperature') | float(0) %}
+            {% set h = states('sensor.living_room_humidity') | float(0) %}
+            {% set c = states('sensor.living_room_co2') | int(0) %}
+            {{ [
+              'value|' ~ (t | round(1)) ~ '|°C|Temperature||thermometer',
+              'value|' ~ (h | round(0) | int) ~ '|%|Humidity|'
+                ~ ('orange' if h < 40 else 'green' if h < 60 else 'blue') ~ '|water-percent',
+              'bar|' ~ c ~ '|ppm|CO2|'
+                ~ ('green' if c < 800 else 'yellow' if c < 1200 else 'red') ~ '|molecule-co2|400|2000'
+            ] }}
