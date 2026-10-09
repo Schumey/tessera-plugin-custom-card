@@ -13,8 +13,8 @@ A tap opens the parts large on a card over the page, with their labels.
 ## Set up
 
 1. In Home Assistant, make a template sensor whose attribute `elements` lists the card's parts, one text per part
-   (below), put it in `configuration.yaml`, and reload Template entities. `examples/living_room.yaml` in the plugin's
-   folder is a larger one, with levels for the humidity and the CO2.
+   (below), put it in `configuration.yaml`, and reload Template entities. [examples/living_room.yaml](https://github.com/StofLE/tessera-custom-card/blob/main/examples/living_room.yaml)
+   is a larger one, with levels for the humidity and the CO2.
 2. In Tessera, open **Plugins**, choose **Custom card** and tick your screens. Each screen builds once.
 3. In Layout, place the **Custom card** tile from the library's Plugins group, at any size, and choose the template
    sensor in its inspector.
