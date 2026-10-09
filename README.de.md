@@ -69,4 +69,5 @@ und den Balken. Ein Icon ist ein Name aus der Icon-Auswahl des Editors, mit oder
 - `tessera-plugin.yaml`: ein Tile, das zu einem Sensor gehört und dessen `elements` und `unit_of_measurement` bekommt.
 - `components/custom_card/`: die ESPHome-Komponente, die die Teile anordnet und zeichnet.
 - `translations/`: die Worte auf dem Bildschirm (`screen`) und in der App (`app`).
+- `CHANGELOG.md`: was jede Version geändert hat; die App zeigt es bei einem Update.
 - `tools/make_icons.py`: schreibt die Namen von Tesseras Icon-Satz in `icons.h`.

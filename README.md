@@ -66,4 +66,5 @@ name from the editor's icon picker, with or without `mdi:`.
 - `tessera-plugin.yaml`: one tile that belongs to a sensor and gets its `elements` and `unit_of_measurement`.
 - `components/custom_card/`: the ESPHome component that lays the parts out and draws them.
 - `translations/`: the words on the screen (`screen`) and in the app (`app`).
+- `CHANGELOG.md`: what each version changed; the app shows it with an update.
 - `tools/make_icons.py`: writes the names of Tessera's icon set into `icons.h`.
