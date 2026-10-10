@@ -8,6 +8,7 @@ On a tile one row high and two columns or more, the parts stand side by side, ea
 and a bar under its value. Any other tile stacks them: values side by side, a bar or a line of words across the width.
 The values take the largest face that fits beside the tile's name; the labels above them stay only where they cost
 the values nothing, else each icon stands before its number. A label without an icon or a colour always stays.
+A tap opens the parts large on a card over the page, with their labels.
 
 ## Set up
 
@@ -64,7 +65,8 @@ name from the editor's icon picker, with or without `mdi:`.
 ## How it works
 
 - `tessera-plugin.yaml`: one tile that belongs to a sensor and gets its `elements` and `unit_of_measurement`.
-- `components/custom_card/`: the ESPHome component that lays the parts out and draws them.
+- `components/custom_card/`: the ESPHome component that lays the parts out and draws them, on the tile and on the
+  card a tap opens.
 - `translations/`: the words on the screen (`screen`) and in the app (`app`).
 - `CHANGELOG.md`: what each version changed; the app shows it with an update.
 - `tools/make_icons.py`: writes the names of Tessera's icon set into `icons.h`.

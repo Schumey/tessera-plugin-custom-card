@@ -497,7 +497,7 @@ class Drawing {
   lv_obj_t *head_{}, *note_{};
 };
 
-// The tile: its parts on the card's area.
+// The tile: its parts on the card's area; a tap opens them large over the page.
 class CardTile : public tessera::Tile {
  public:
   explicit CardTile(const tessera::Plugin *plugin) : plugin_(plugin), drawing_(plugin) {}
@@ -511,8 +511,7 @@ class CardTile : public tessera::Tile {
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }
-  // A tap is to open the card below (tessera::open_card(plugin_->plugin_id(), "detail", entity_, tile_)). Not yet: the
-  // core gives a plugin's card a root without a height, so LVGL cuts off everything under its top bar.
+  void on_tap() override { tessera::open_card(plugin_->plugin_id(), "detail", entity_, tile_); }
 
  private:
   const tessera::Plugin *plugin_;

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 - 2026-10-10
+- A tap on the tile opens its parts large on a card over the page, with their labels.
+- Needs a Tessera from 2026-10-10 or later: an older one shows the card empty under its top bar.
+
 ## 0.3.3 - 2026-10-09
 - Listed under the topic Home on the Plugins page.
 - Needs a Tessera with plugin API 0.7: update the app first.

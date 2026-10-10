@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.4.0 - 2026-10-10
+- Ein Tippen auf das Tile öffnet die Teile groß auf einer Karte über der Seite, mit ihren Labels.
+- Braucht ein Tessera vom 10.10.2026 oder neuer: ein älteres zeigt die Karte unter ihrer Titelzeile leer.
+
 ## 0.3.3 - 2026-10-09
 - Auf der Plugins-Seite unter dem Thema Zuhause zu finden.
 - Braucht ein Tessera mit Plugin-API 0.7: erst die App aktualisieren.

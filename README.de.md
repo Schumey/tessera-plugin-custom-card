@@ -9,6 +9,7 @@ Label und Icon darüber und einem Balken unter dem Wert. Jedes andere Tile stape
 oder eine Textzeile über die ganze Breite. Die Werte bekommen die größte Schrift, die neben dem Namen des Tiles passt;
 die Labels darüber bleiben nur, wo sie die Werte nichts kosten, sonst steht jedes Icon vor seiner Zahl.
 Ein Label ohne Icon und ohne Farbe bleibt immer.
+Ein Tippen öffnet die Teile groß auf einer Karte über der Seite, mit ihren Labels.
 
 ## Einrichten
 
@@ -67,7 +68,8 @@ und den Balken. Ein Icon ist ein Name aus der Icon-Auswahl des Editors, mit oder
 ## So funktioniert es
 
 - `tessera-plugin.yaml`: ein Tile, das zu einem Sensor gehört und dessen `elements` und `unit_of_measurement` bekommt.
-- `components/custom_card/`: die ESPHome-Komponente, die die Teile anordnet und zeichnet.
+- `components/custom_card/`: die ESPHome-Komponente, die die Teile anordnet und zeichnet, auf dem Tile und auf der
+  Karte, die ein Tippen öffnet.
 - `translations/`: die Worte auf dem Bildschirm (`screen`) und in der App (`app`).
 - `CHANGELOG.md`: was jede Version geändert hat; die App zeigt es bei einem Update.
 - `tools/make_icons.py`: schreibt die Namen von Tesseras Icon-Satz in `icons.h`.
