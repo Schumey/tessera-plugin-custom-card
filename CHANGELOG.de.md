@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.4.1 - 2026-10-11
+- Ein farbiges Icon wird im hellen Modus dunkler, wo es sich sonst nicht von der Karte abhebt: ein gelbes wird auf Weiß ocker.
+
 ## 0.4.0 - 2026-10-10
 - Ein Tippen auf das Tile öffnet die Teile groß auf einer Karte über der Seite, mit ihren Labels.
 - Braucht ein Tessera vom 10.10.2026 oder neuer: ein älteres zeigt die Karte unter ihrer Titelzeile leer.

@@ -24,6 +24,30 @@ namespace ui = tessera::ui;
 // blue, purple, pink, gray), the same in light and dark: it paints the part's icon (a dot where it has none) and its
 // bar, never its words. An icon is a name of Tessera's set (icons.h).
 
+// WCAG's contrast of two colours, 1 to 21.
+static float contrast(uint32_t a, uint32_t b) {
+  auto lum = [](uint32_t c) {
+    float sum = 0;
+    const float weight[3] = {0.2126f, 0.7152f, 0.0722f};
+    for (int i = 0; i < 3; ++i) {
+      const float v = ((c >> (16 - 8 * i)) & 0xFF) / 255.0f;
+      sum += weight[i] * (v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f));
+    }
+    return sum;
+  };
+  const float x = lum(a), y = lum(b);
+  return (std::max(x, y) + 0.05f) / (std::min(x, y) + 0.05f);
+}
+
+// A part's colour as its icon: Tessera's own tile icon colour, and darker still where it would not read on the card
+// (a yellow on white): Tessera's icons sit on a pale disc of their colour, these stand on the card itself.
+static uint32_t icon_colour(uint32_t colour) {
+  uint32_t out = theme::icon(colour);
+  const uint32_t card = theme::hex(theme::CARD);
+  for (int i = 0; i < 8 && contrast(out, card) < 3.0f; ++i) out = theme::mix(out, theme::hex(theme::INK), 205);
+  return out;
+}
+
 static constexpr int MAX_PARTS = 6;
 static constexpr int MAX_IN_ROW = 4;
 
@@ -181,7 +205,7 @@ class Drawing {
       ui::set_color(s.value, theme::INK);
       lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
       if (own) {
-        lv_obj_set_style_text_color(s.icon, theme::rgb(own), 0);
+        lv_obj_set_style_text_color(s.icon, theme::rgb(icon_colour(own)), 0);
         lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
       } else {

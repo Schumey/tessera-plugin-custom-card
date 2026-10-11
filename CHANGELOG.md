@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.1 - 2026-10-11
+- A coloured icon is darker in the light look where it would not read on the card: a yellow one turns ochre on white.
+
 ## 0.4.0 - 2026-10-10
 - A tap on the tile opens its parts large on a card over the page, with their labels.
 - Needs a Tessera from 2026-10-10 or later: an older one shows the card empty under its top bar.
