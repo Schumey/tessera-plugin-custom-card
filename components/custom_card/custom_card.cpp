@@ -264,6 +264,14 @@ class Drawing {
     return text;
   }
 
+  // Larger faces first: DIGITS, then Font's own order.
+  static int rank(Font f) { return f == Font::DIGITS ? -1 : static_cast<int>(f); }
+  // Whether DIGITS has every character of every value shown large (a word, a letter or a sign it lacks keeps VALUE).
+  bool digits_hold_values() const {
+    for (const Part &part : parts_)
+      if (part.kind != Kind::TEXT && !ui::covers(part.value, Font::DIGITS)) return false;
+    return true;
+  }
   int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
   int bar_thickness() const { return ui::px(ui::large() ? 10 : 6); }
   int dot_size() const { return ui::px(ui::large() ? 12 : 8); }
@@ -355,11 +363,13 @@ class Drawing {
       for (const std::vector<Line> &all : arrangements) {
         if (all.empty()) continue;
         for (bool head : {named, false}) {
-          // The largest face for the values with the name alone (larger is earlier in Font).
-          const Font every[] = {Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
+          // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them all,
+          // and only where every value is digits it holds).
+          const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
           for (Font f : every) {
+            if (f == Font::DIGITS && !digits_hold_values()) continue;
             if (!fits(all, f, head, labelled)) continue;
-            if (!found || static_cast<int>(f) < static_cast<int>(face)) {
+            if (!found || rank(f) < rank(face)) {
               face = f;
               chosen = {head, labelled || fits(all, f, head, true)};
               lines = &all;

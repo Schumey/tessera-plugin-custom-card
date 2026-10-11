@@ -1,5 +1,10 @@
 # Änderungen
 
+## 0.5.0
+- Große Zahlen auf großen Tiles: Wo sie passen und alle Werte Zahlen sind, bekommen die Werte die großen Ziffern
+  der Klimakarte von Tessera. Ein Wert mit einem Wort darin behält seine bisherige Schrift.
+- Braucht Tessera mit Plugin-API 0.9 (das Release nach 0.4.87).
+
 ## 0.4.2 - 2026-10-12
 - Ein Bild auf der Plugins-Seite.
 

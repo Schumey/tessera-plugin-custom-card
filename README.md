@@ -6,8 +6,9 @@ whatever a template can say.
 
 On a tile one row high and two columns or more, the parts stand side by side, each with its label and icon above it
 and a bar under its value. Any other tile stacks them: values side by side, a bar or a line of words across the width.
-The values take the largest face that fits beside the tile's name; the labels above them stay only where they cost
-the values nothing, else each icon stands before its number. A label without an icon or a colour always stays.
+The values take the largest face that fits beside the tile's name, on a large tile the climate card's large digits
+when every value is a number; the labels above them stay only where they cost the values nothing, else each icon
+stands before its number. A label without an icon or a colour always stays.
 A tap opens the parts large on a card over the page, with their labels.
 
 ## Set up

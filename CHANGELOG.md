@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+- Large numbers on a large tile: where they fit and every value is a number, the values take the large digits of
+  Tessera's climate card. A value with a word in it keeps the face it had.
+- Needs Tessera with plugin API 0.9 (the release after 0.4.87).
+
 ## 0.4.2 - 2026-10-12
 - A picture on the Plugins page.
 
