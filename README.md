@@ -51,8 +51,9 @@ the icon, and for a bar its lowest and highest value. Fields at the end may be l
 - `text`: a line of words, such as `text|Door open||||door-open`.
 
 A colour is `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles it
-marks a part and never paints its words: it colours the icon (a dot where the part has none) and the bar. An icon is a
-name from the editor's icon picker, with or without `mdi:`.
+marks a part and never paints its words: it colours the icon (a dot where the part has none) and the bar. The colours
+that say how good a level is are Tessera's own, readable in light and dark: `green` good, `yellow` and `orange`
+moderate, `red` bad, `blue` the accent. An icon is a name from the editor's icon picker, with or without `mdi:`.
 
 ## Good to know
 

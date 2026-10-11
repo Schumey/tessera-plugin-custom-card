@@ -54,7 +54,9 @@ Label, die Farbe, das Icon und bei einem Balken sein kleinster und größter Wer
 
 Eine Farbe ist `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras
 eigenen Tiles markiert sie einen Teil und färbt nie seine Worte: Sie färbt das Icon (einen Punkt, wo der Teil keins hat)
-und den Balken. Ein Icon ist ein Name aus der Icon-Auswahl des Editors, mit oder ohne `mdi:`.
+und den Balken. Die Farben, die sagen, wie gut ein Wert ist, sind Tesseras eigene, hell und dunkel lesbar: `green`
+gut, `yellow` und `orange` mäßig, `red` schlecht, `blue` die Akzentfarbe. Ein Icon ist ein Name aus der Icon-Auswahl des
+Editors, mit oder ohne `mdi:`.
 
 ## Gut zu wissen
 

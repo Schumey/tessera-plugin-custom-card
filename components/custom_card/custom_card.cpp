@@ -10,6 +10,7 @@
 namespace esphome::custom_card {
 
 using tessera::Font;
+using tessera::Tone;
 namespace ui = tessera::ui;
 
 // ---- What a template sensor describes ----
@@ -21,8 +22,19 @@ namespace ui = tessera::ui;
 //   text|<words>|||<colour>|<icon>
 //
 // Fields at the end may be left out. A colour is one of the key colours of theme.h (red, orange, yellow, green, mint,
-// blue, purple, pink, gray), the same in light and dark: it paints the part's icon (a dot where it has none) and its
-// bar, never its words. An icon is a name of Tessera's set (icons.h).
+// blue, purple, pink, gray): it paints the part's icon (a dot where it has none) and its bar, never its words. The
+// colours that mean something are Tessera's tones (plugin API 0.9), readable on the card in both looks: green is GOOD,
+// yellow and orange BUSY, red ALERT, blue ACCENT; the others keep their key colour. An icon is a name of Tessera's set
+// (icons.h).
+
+// The tone a colour name means, as Tessera colours a level: good, moderate, bad, or the accent.
+static Tone tone_of(const std::string &name) {
+  if (name == "green") return Tone::GOOD;
+  if (name == "yellow" || name == "orange") return Tone::BUSY;
+  if (name == "red") return Tone::ALERT;
+  if (name == "blue") return Tone::ACCENT;
+  return Tone::NORMAL;
+}
 
 // WCAG's contrast of two colours, 1 to 21.
 static float contrast(uint32_t a, uint32_t b) {
@@ -41,12 +53,12 @@ static float contrast(uint32_t a, uint32_t b) {
 
 // A part's colour as its icon: Tessera's own tile icon colour, and darker still where it would not read on the card
 // (a yellow on white): Tessera's icons sit on a pale disc of their colour, these stand on the card itself.
-static uint32_t icon_colour(uint32_t colour) {
-  uint32_t out = theme::icon(colour);
+static uint32_t readable(uint32_t colour) {
   const uint32_t card = theme::hex(theme::CARD);
-  for (int i = 0; i < 8 && contrast(out, card) < 3.0f; ++i) out = theme::mix(out, theme::hex(theme::INK), 205);
-  return out;
+  for (int i = 0; i < 8 && contrast(colour, card) < 3.0f; ++i) colour = theme::mix(colour, theme::hex(theme::INK), 205);
+  return colour;
 }
+static uint32_t icon_colour(uint32_t colour) { return readable(theme::icon(colour)); }
 
 static constexpr int MAX_PARTS = 6;
 static constexpr int MAX_IN_ROW = 4;
@@ -57,6 +69,7 @@ struct Part {
   Kind kind = Kind::VALUE;
   std::string value, unit, label;
   uint32_t colour = 0;  // a key colour of theme.h, 0 for the card's own paint
+  Tone tone = Tone::NORMAL;  // the tone the colour means, NORMAL for a colour without one
   uint32_t icon = 0;    // a codepoint of Tessera's set, 0 for none
   float min = 0, max = 100;
 };
@@ -111,6 +124,7 @@ static bool parse(const std::string &line, Part *part) {
   part->unit = at(2);
   part->label = at(3);
   part->colour = theme::key_swatch(at(4));
+  part->tone = tone_of(at(4));
   part->icon = icon_of(at(5));
   float n;
   if (number_of(at(6), &n)) part->min = n;
@@ -200,11 +214,18 @@ class Drawing {
     for (size_t i = 0; i < MAX_PARTS; ++i) {
       Slot &s = slots_[i];
       const uint32_t own = i < parts_.size() ? parts_[i].colour : 0;
+      const Tone tone = i < parts_.size() ? parts_[i].tone : Tone::NORMAL;
       ui::set_color(s.label, theme::MUTED);
       ui::set_color(s.unit, theme::MUTED);
       ui::set_color(s.value, theme::INK);
       lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
-      if (own) {
+      if (tone != Tone::NORMAL) {
+        // The tone's colour; on the icon darker still where it would not read on the card (BUSY's amber on white).
+        const uint32_t toned = lv_color_to_u32(ui::tone_color(tone, theme::MUTED));  // 0xFFRRGGBB: the alpha byte is ignored
+        lv_obj_set_style_text_color(s.icon, theme::rgb(readable(toned)), 0);
+        ui::set_fill(s.dot, tone, theme::ACCENT);
+        ui::set_fill(s.fill, tone, theme::ACCENT);
+      } else if (own) {
         lv_obj_set_style_text_color(s.icon, theme::rgb(icon_colour(own)), 0);
         lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
