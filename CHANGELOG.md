@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3 - 2026-10-12
+- Up to eight parts on a card instead of six: two full rows of four values. Each tile of the card costs the screen a
+  little more memory for it.
+
 ## 0.4.2 - 2026-10-12
 - A picture on the Plugins page.
 

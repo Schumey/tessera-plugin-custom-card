@@ -57,7 +57,7 @@ name from the editor's icon picker, with or without `mdi:`.
 
 - Home Assistant renders the template; the tile changes whenever the sensor does. Work out levels and colours in the
   template, round values there, and write the decimal sign you want.
-- At most six parts, each at most 48 bytes: Tessera cuts longer texts, so keep labels short.
+- At most eight parts (two rows of four values), each at most 48 bytes: Tessera cuts longer texts, so keep labels short.
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
 - When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
 - The tile's background colour is set in the editor, as for every tile.

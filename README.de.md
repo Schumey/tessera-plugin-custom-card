@@ -59,7 +59,7 @@ und den Balken. Ein Icon ist ein Name aus der Icon-Auswahl des Editors, mit oder
 
 - Home Assistant rendert das Template; das Tile ändert sich, sobald sich der Sensor ändert. Stufen und Farben
   berechnest du im Template, dort rundest du die Werte und wählst das Dezimalzeichen.
-- Höchstens sechs Teile, jeder höchstens 48 Bytes: Tessera kürzt längere Texte, also Labels kurz halten.
+- Höchstens acht Teile (zwei Reihen mit vier Werten), jeder höchstens 48 Bytes: Tessera kürzt längere Texte, also Labels kurz halten.
 - Die Schrift eines Werts richtet sich nach seiner Form, nicht nach den Ziffern, so behält das Tile seine Größe, wenn
   sich ein Wert ändert.
 - Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` zurück ist.

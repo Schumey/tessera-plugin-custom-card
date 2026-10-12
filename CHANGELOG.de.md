@@ -1,5 +1,9 @@
 # Änderungen
 
+## 0.4.3 - 2026-10-12
+- Bis zu acht Teile auf einer Karte statt sechs: zwei volle Reihen mit vier Werten. Jede Kachel der Karte kostet den
+  Bildschirm dafür etwas mehr Speicher.
+
 ## 0.4.2 - 2026-10-12
 - Ein Bild auf der Plugins-Seite.
 

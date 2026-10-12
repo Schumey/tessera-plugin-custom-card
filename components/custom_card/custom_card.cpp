@@ -48,7 +48,7 @@ static uint32_t icon_colour(uint32_t colour) {
   return out;
 }
 
-static constexpr int MAX_PARTS = 6;
+static constexpr int MAX_PARTS = 8;
 static constexpr int MAX_IN_ROW = 4;
 
 enum class Kind : uint8_t { VALUE, BAR, TEXT };
