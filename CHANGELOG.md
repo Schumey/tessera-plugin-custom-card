@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.2 - 2026-10-12
+- A picture on the Plugins page.
+
 ## 0.4.1 - 2026-10-11
 - A coloured icon is darker in the light look where it would not read on the card: a yellow one turns ochre on white.
 

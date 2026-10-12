@@ -1,5 +1,8 @@
 # Änderungen
 
+## 0.4.2 - 2026-10-12
+- Ein Bild auf der Plugins-Seite.
+
 ## 0.4.1 - 2026-10-11
 - Ein farbiges Icon wird im hellen Modus dunkler, wo es sich sonst nicht von der Karte abhebt: ein gelbes wird auf Weiß ocker.
 
