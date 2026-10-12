@@ -3,6 +3,8 @@
 ## 0.4.3 - 2026-10-12
 - Bis zu acht Teile auf einer Karte statt sechs: zwei volle Reihen mit vier Werten. Jede Kachel der Karte kostet den
   Bildschirm dafür etwas mehr Speicher.
+- Textzeilen und Balken über die ganze Breite werden auf einer niedrigen Kachel mit den Werten kleiner, statt unten
+  herauszulaufen; wo selbst die kleinste Größe zu groß ist, zeigt die Karte die Zeilen, die ganz passen.
 
 ## 0.4.2 - 2026-10-12
 - Ein Bild auf der Plugins-Seite.
