@@ -19,8 +19,9 @@ tiles:
     name: tile_name
     icon: gauge
     sizes: { min: 1x1, max: 4x4 }
-    # Six parts of up to four labels and three blocks each, the tile's name and a line for what is missing.
-    memory: 4300
+    # Eight parts of up to four labels and three blocks each (two rows of four values), the tile's name and a line for
+    # what is missing.
+    memory: 5600
     domains: [sensor]
     # `elements` is the card; a sensor without it shows its own state and unit.
     attributes: [elements, unit_of_measurement]

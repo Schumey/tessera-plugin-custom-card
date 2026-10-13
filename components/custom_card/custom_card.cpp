@@ -60,7 +60,7 @@ static uint32_t readable(uint32_t colour) {
 }
 static uint32_t icon_colour(uint32_t colour) { return readable(theme::icon(colour)); }
 
-static constexpr int MAX_PARTS = 6;
+static constexpr int MAX_PARTS = 8;
 static constexpr int MAX_IN_ROW = 4;
 
 enum class Kind : uint8_t { VALUE, BAR, TEXT };
@@ -294,6 +294,14 @@ class Drawing {
     return true;
   }
   int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
+  // The words of a text and of a bar across the width: one step above the body, and the body itself where the values
+  // had to go down to it, so a tall list of texts shrinks with them instead of running out of the tile.
+  static Font words_face(Font face) { return face == Font::BODY ? Font::BODY : Font::BODY_LARGE; }
+  // A text's row: its words, and the small icon's height only where it has a mark.
+  int text_row(const Part &part, Font face) const {
+    const int words = ui::line_height(words_face(face));
+    return has_mark(part) ? std::max(words, ui::line_height(Font::ICON_SMALL)) : words;
+  }
   int bar_thickness() const { return ui::px(ui::large() ? 10 : 6); }
   int dot_size() const { return ui::px(ui::large() ? 12 : 8); }
   int gap() const { return ui::px(ui::large() ? 8 : 4); }
@@ -322,15 +330,15 @@ class Drawing {
   int line_height(const Line &line, Font face, bool labels) const {
     const Part &first = parts_[line.first];
     if (line.across)
-      return first.kind == Kind::BAR ? ui::line_height(Font::BODY_LARGE) + ui::px(4) + bar_thickness()
-                                     : std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL));
+      return first.kind == Kind::BAR ? ui::line_height(words_face(face)) + ui::px(4) + bar_thickness()
+                                     : text_row(first, face);
     const int words = labels && has_words(line) ? words_row() : 0;
     int h = 0;
     for (int i = line.first; i < line.first + line.count; ++i) {
       switch (parts_[i].kind) {
         case Kind::VALUE: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
-        default: h = std::max(h, std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL)));
+        default: h = std::max(h, text_row(parts_[i], face));
       }
     }
     return h;
@@ -419,9 +427,12 @@ class Drawing {
     const int n = (int) lines->size();
     const int between = n > 1 ? std::max(gap(), spare / (n + 1)) : 0;
     y += std::max(0, (spare - between * (n - 1)) / 2);
+    // Where even the smallest face does not fit, the lines that fit whole, never one cut in half at the bottom.
     for (const Line &line : *lines) {
+      const int h = line_height(line, face, chosen.labels);
+      if (!found && y + h > height_) break;
       place(line, face, chosen.labels, y);
-      y += line_height(line, face, chosen.labels) + between;
+      y += h + between;
     }
   }
 
@@ -507,13 +518,14 @@ class Drawing {
       const Part &part = parts_[line.first];
       Slot &s = slots_[line.first];
       if (part.kind == Kind::TEXT) {
-        place_words(s, part, 0, y, h, width_, Font::BODY_LARGE, s.value, part.value);
+        place_words(s, part, 0, y, h, width_, words_face(face), s.value, part.value);
         return;
       }
       // A bar across the width: its words at the left, the value at the right, the bar under them.
-      const int row = ui::line_height(Font::BODY_LARGE);
-      const int right = ui::text_width(part.value, Font::BODY_LARGE) + unit_width(part);
-      place_value(s, part, Font::BODY_LARGE, width_ - right, y, right);
+      const Font words = words_face(face);
+      const int row = ui::line_height(words);
+      const int right = ui::text_width(part.value, words) + unit_width(part);
+      place_value(s, part, words, width_ - right, y, right);
       place_words(s, part, 0, y, row, std::max(0, width_ - right - ui::px(8)), Font::BODY, s.label, part.label);
       place_bar(s, part, 0, y + row + ui::px(4), width_);
       return;
@@ -525,8 +537,8 @@ class Drawing {
       Slot &s = slots_[line.first + k];
       const int x = k * (column + column_gap());
       if (part.kind == Kind::TEXT) {
-        const int th = std::max(ui::line_height(Font::BODY_LARGE), ui::line_height(Font::ICON_SMALL));
-        place_words(s, part, x, y + (h - th) / 2, th, column, Font::BODY_LARGE, s.value, part.value);
+        const int th = text_row(part, face);
+        place_words(s, part, x, y + (h - th) / 2, th, column, words_face(face), s.value, part.value);
         continue;
       }
       int vy = y;

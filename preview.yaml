@@ -1,5 +1,6 @@
 # What tools/preview.py of the tessera-plugins repository shows (its docs/PREVIEW.md): a room's climate with icons,
-# colours and a bar, two counts with a share, and a card whose value is a word. Never put a secret here.
+# colours and a bar, two counts with a share, a card whose value is a word,
+# eight rooms in two rows of four, and eight rooms as lines of text. Never put a secret here.
 tiles:
   - tile: card
     name: Living room
@@ -11,6 +12,14 @@ tiles:
     name: Front door
     entity: sensor.front_door_card
     sizes: [1x1, 2x1, 2x2]
+  - tile: card
+    name: Rooms
+    entity: sensor.rooms_card
+    sizes: [2x2, 3x2, 4x2, 4x4]
+  - tile: card
+    name: House
+    entity: sensor.house_card
+    sizes: [1x2, 2x2, 3x2, 3x3]
 
 states:
   sensor.living_room_card:
@@ -35,6 +44,30 @@ states:
         - "value|open||Lock|red|lock-open-variant"
         - "value|21,4|°C|Hall||thermometer"
         - "text|Window kitchen open||||window-open-variant"
+  sensor.rooms_card:
+    state: "21,2"
+    attributes:
+      elements:
+        - "value|21,2|°C|Living"
+        - "value|20,4|°C|Kitchen"
+        - "value|18,1|°C|Bedroom"
+        - "value|22,0|°C|Bath"
+        - "value|19,5|°C|Office"
+        - "value|20,8|°C|Kids"
+        - "value|16,3|°C|Hall"
+        - "value|12,7|°C|Cellar|blue"
+  sensor.house_card:
+    state: "17.8"
+    attributes:
+      elements:
+        - "text|Entrance: 20,8 °C"
+        - "text|Kitchen: 21,8 °C"
+        - "text|Bedroom: 20,8 °C"
+        - "text|Bath: 20,5 °C"
+        - "text|Dining: 20,7 °C"
+        - "text|Living: 20,4 °C"
+        - "text|Attic: 22,7 °C"
+        - "text|Outside: 17,8 °C"
 
 cards:
   - { card: detail, entity: sensor.living_room_card }

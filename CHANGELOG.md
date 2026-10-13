@@ -7,6 +7,12 @@
   on the card in light and dark, as Tessera colours a level.
 - Needs Tessera with plugin API 0.9 (the release after 0.4.87).
 
+## 0.4.3 - 2026-10-12
+- Up to eight parts on a card instead of six: two full rows of four values. Each tile of the card costs the screen a
+  little more memory for it.
+- Lines of text and bars across the card get smaller with the values where the tile is short, instead of running out
+  at the bottom; where even the smallest size is too large, the card shows the lines that fit whole.
+
 ## 0.4.2 - 2026-10-12
 - A picture on the Plugins page.
 
