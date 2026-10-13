@@ -5,6 +5,10 @@
   der Klimakarte von Tessera. Ein Wert mit einem Wort darin behält seine bisherige Schrift.
 - Grün, Gelb, Orange, Rot und Blau sind Tesseras eigene Farben nach Bedeutung (gut, mäßig, schlecht, Akzent), hell und
   dunkel auf der Karte lesbar, wie Tessera einen Wert einfärbt.
+- Wo auf einer kleinen Kachel nichts passt, stehen die Werte zu zweit oder einzeln untereinander, statt in einer Zeile
+  abgeschnitten zu werden.
+- Ein Text neben anderen Teilen auf einer flachen Kachel bleibt ganz, wo die Teile stattdessen untereinander stehen
+  können; Labels gehen weiterhin vor.
 - Braucht Tessera mit Plugin-API 0.9 (das Release nach 0.4.87).
 
 ## 0.4.3 - 2026-10-12

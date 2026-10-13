@@ -259,12 +259,12 @@ class Drawing {
       for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track}) show(obj, false);
   }
 
-  // Stacked: values that follow each other side by side, a bar and a text alone across the width.
-  std::vector<Line> stacked() const {
+  // Stacked: values that follow each other side by side (at most `in_row`), a bar and a text alone across the width.
+  std::vector<Line> stacked(int in_row = MAX_IN_ROW) const {
     std::vector<Line> out;
     for (int i = 0; i < (int) parts_.size(); ++i) {
       const bool value = parts_[i].kind == Kind::VALUE;
-      if (value && !out.empty() && !out.back().across && out.back().count < MAX_IN_ROW)
+      if (value && !out.empty() && !out.back().across && out.back().count < in_row)
         ++out.back().count;
       else
         out.push_back({i, 1, !value});
@@ -344,20 +344,31 @@ class Drawing {
     return h;
   }
 
-  bool fits(const std::vector<Line> &all, Font face, bool head, bool labels) const {
-    int used = head ? ui::line_height(Font::TITLE) + gap() : 0;
+  // Whether every value of `all` has the room of its column in `face`, whatever the height.
+  bool fits_across(const std::vector<Line> &all, Font face, bool labels) const {
     for (const Line &line : all) {
-      if (!line.across) {
-        const int column = column_width(line.count);
-        for (int i = line.first; i < line.first + line.count; ++i) {
-          const Part &part = parts_[i];
-          if (part.kind == Kind::TEXT) continue;
-          const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(6);
-          if (mark + ui::text_width(shape(part.value), face) + unit_width(part) > column) return false;
+      if (line.across) continue;
+      const int column = column_width(line.count);
+      for (int i = line.first; i < line.first + line.count; ++i) {
+        const Part &part = parts_[i];
+        if (part.kind == Kind::TEXT) {
+          // A text beside other parts (a flat tile) has its words whole where another arrangement allows it.
+          if (whole_texts_ && line.count > 1 && mark_width(part, Font::ICON_SMALL) + (has_mark(part) ? ui::px(6) : 0) +
+                                        ui::text_width(part.value, words_face(face)) > column)
+            return false;
+          continue;
         }
+        const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(6);
+        if (mark + ui::text_width(shape(part.value), face) + unit_width(part) > column) return false;
       }
-      used += line_height(line, face, labels);
     }
+    return true;
+  }
+
+  bool fits(const std::vector<Line> &all, Font face, bool head, bool labels) const {
+    if (!fits_across(all, face, labels)) return false;
+    int used = head ? ui::line_height(Font::TITLE) + gap() : 0;
+    for (const Line &line : all) used += line_height(line, face, labels);
     used += gap() * ((int) all.size() - 1);
     return used <= height_;
   }
@@ -388,29 +399,43 @@ class Drawing {
     bool unmarked = false;
     for (const Part &part : parts_)
       if (part.kind != Kind::TEXT && !part.label.empty() && !has_mark(part)) unmarked = true;
+    // Labels before whole words: first with a text beside other parts whole, then with it cut short, as before.
     for (bool labelled : {unmarked, false}) {
-      for (const std::vector<Line> &all : arrangements) {
-        if (all.empty()) continue;
-        for (bool head : {named, false}) {
-          // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them all,
-          // and only where every value is digits it holds).
-          const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
-          for (Font f : every) {
-            if (f == Font::DIGITS && !digits_hold_values()) continue;
-            if (!fits(all, f, head, labelled)) continue;
-            if (!found || rank(f) < rank(face)) {
-              face = f;
-              chosen = {head, labelled || fits(all, f, head, true)};
-              lines = &all;
-              found = true;
+      for (bool whole : {true, false}) {
+        whole_texts_ = whole;
+        for (const std::vector<Line> &all : arrangements) {
+          if (all.empty()) continue;
+          for (bool head : {named, false}) {
+            // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them
+            // all, and only where every value is digits it holds).
+            const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
+            for (Font f : every) {
+              if (f == Font::DIGITS && !digits_hold_values()) continue;
+              if (!fits(all, f, head, labelled)) continue;
+              if (!found || rank(f) < rank(face)) {
+                face = f;
+                chosen = {head, labelled || fits(all, f, head, true)};
+                lines = &all;
+                found = true;
+              }
+              break;
             }
-            break;
+            if (found) break;
           }
-          if (found) break;
         }
+        if (found) break;
       }
       if (found) break;
     }
+    whole_texts_ = true;
+    // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
+    // show (below).
+    if (!found)
+      for (int in_row : {2, 1}) {
+        fallback_ = stacked(in_row);
+        lines = &fallback_;
+        if (fits_across(fallback_, face, false)) break;
+      }
 
     int y = 0;
     if (chosen.head) {
@@ -560,6 +585,8 @@ class Drawing {
   bool flat_ = false, titled_ = true;
   std::string name_, shown_name_, note_text_;
   std::vector<Part> parts_;
+  std::vector<Line> fallback_;
+  mutable bool whole_texts_ = true;  // layout's choice while it searches (fits_across reads it)  // the arrangement of a tile where nothing fits, which `lines` may point to
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};
 };

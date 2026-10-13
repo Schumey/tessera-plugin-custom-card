@@ -5,6 +5,9 @@
   Tessera's climate card. A value with a word in it keeps the face it had.
 - Green, yellow, orange, red and blue are Tessera's own colours by meaning (good, moderate, bad, the accent), readable
   on the card in light and dark, as Tessera colours a level.
+- Where nothing fits a small tile, its values stand two to a row, or one, instead of being cut short in one row.
+- A text beside other parts on a flat tile keeps its words whole where the parts can stand under each other
+  instead; labels still come first.
 - Needs Tessera with plugin API 0.9 (the release after 0.4.87).
 
 ## 0.4.3 - 2026-10-12
