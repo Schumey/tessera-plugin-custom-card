@@ -1,72 +1,179 @@
 # Custom card
 
-A tile you put together yourself: values, bars and lines of words that a template sensor in Home Assistant describes,
-drawn by the screen in its own fonts and colours. A room's climate on one tile, the house's power, what is open:
-whatever a template can say.
+A tile you put together yourself: values, bars, lines of words and tables that a template sensor in Home Assistant
+describes, drawn by the screen in its own fonts and colours. A room's climate on one tile, a list of rooms, the
+batteries that run low, the next departures from your stop: whatever a template can say.
 
-On a tile one row high and two columns or more, the parts stand side by side, each with its label and icon above it
-and a bar under its value. Any other tile stacks them: values side by side, a bar, a line of words or a row of a table across the width.
-The values take the largest face that fits beside the tile's name, on a large tile the climate card's large digits
-when every value is a number; the labels above them stay only where they cost the values nothing, else each icon
-stands before its number. A label without an icon or a colour always stays.
-A tap opens the parts large on a card over the page, with their labels.
+The card lays itself out for the tile it stands on. On a tile one row high and two columns or more the parts stand side
+by side; any other tile stacks them: values side by side, a bar, a line of words or a row of a table across the width.
+Values take the largest face that fits, on a large tile the climate card's large digits; rows and words grow with the
+room as well. A tap opens the parts large on a card over the page, with their labels.
 
 ## Set up
 
-1. In Home Assistant, make a template sensor whose attribute `elements` lists the card's parts, one text per part
-   (below), put it in `configuration.yaml`, and reload Template entities. [examples/living_room.yaml](https://github.com/StofLE/tessera-plugin-custom-card/blob/main/examples/living_room.yaml)
-   is a larger one, with levels for the humidity and the CO2.
+1. In Home Assistant, make a template sensor whose attribute `elements` lists the card's parts, one text per part (the
+   examples below), put it in `configuration.yaml`, and reload **Template entities** in Developer tools, YAML.
 2. In Tessera, open **Plugins**, choose **Custom card** and tick your screens. Each screen builds once.
 3. In Layout, place the **Custom card** tile from the library's Plugins group, at any size, and choose the template
    sensor in its inspector. It offers the sensors that have an `elements` attribute.
 
-## An example
+## Examples
+
+Copy one, change the entity ids to your own, and reload Template entities. Each goes under `template:` in
+`configuration.yaml`.
+[examples/living_room.yaml](https://github.com/StofLE/tessera-plugin-custom-card/blob/main/examples/living_room.yaml)
+is a larger one, with levels for the humidity and the CO2.
+
+### A room's climate
+
+Values with icons, the humidity's colour by its level, and the CO2 as a bar from 400 to 2000 ppm.
 
 ```yaml
 template:
   - sensor:
-      - name: Room card
-        state: "{{ states('sensor.room_co2') }}"
+      - name: Living room card
+        state: "{{ states('sensor.living_room_temperature') }}"
         attributes:
           elements: >
-            {% set t = states('sensor.room_temp') %}
-            {% set c = states('sensor.room_co2')
-                 | int(0) %}
+            {% set t = states('sensor.living_room_temperature') %}
+            {% set h = states('sensor.living_room_humidity') | int(0) %}
+            {% set c = states('sensor.living_room_co2') | int(0) %}
             {{ [
-              'value|' ~ t ~ '|°C|Temperature',
-              'bar|' ~ c ~ '|ppm|CO2|'
-                ~ ('green' if c < 800 else 'red')
+              'value|' ~ t ~ '|°C|Temperature|blue|thermometer',
+              'value|' ~ h ~ '|%|Humidity|' ~ ('green' if 40 <= h <= 60 else 'orange') ~ '|water-percent',
+              'bar|' ~ c ~ '|ppm|CO2|' ~ ('green' if c < 800 else 'yellow' if c < 1200 else 'red')
                 ~ '|molecule-co2|400|2000'
+            ] }}
+```
+
+### A table of rooms
+
+Rows that follow each other stand as a table: the names at the left, the values in one column at the right.
+
+```yaml
+template:
+  - sensor:
+      - name: Rooms card
+        state: "{{ states('sensor.outside_temperature') }}"
+        attributes:
+          elements: >
+            {% set rooms = [
+              ('Kitchen', 'sensor.kitchen_temperature'),
+              ('Bedroom', 'sensor.bedroom_temperature'),
+              ('Bath', 'sensor.bath_temperature'),
+              ('Office', 'sensor.office_temperature'),
+              ('Outside', 'sensor.outside_temperature')] %}
+            {% set ns = namespace(rows=[]) %}
+            {% for name, entity in rooms %}
+              {% set v = states(entity) %}
+              {% set v = '-' if v in ['unknown', 'unavailable'] else v %}
+              {% set ns.rows = ns.rows + ['row|' ~ v ~ '|°C|' ~ name] %}
+            {% endfor %}
+            {{ ns.rows[:8] }}
+```
+
+### The batteries that run low
+
+Every battery sensor of the house, the lowest first, red under 20 %, yellow under 50 %. Home Assistant renders a
+template that walks all sensors at most once a minute, which is plenty for batteries.
+
+```yaml
+template:
+  - sensor:
+      - name: Batteries card
+        state: "{{ now().minute }}"
+        attributes:
+          elements: >
+            {% set ns = namespace(items=[]) %}
+            {% for s in states.sensor
+                 | selectattr('attributes.device_class', 'defined')
+                 | selectattr('attributes.device_class', 'eq', 'battery')
+                 | rejectattr('state', 'in', ['unknown', 'unavailable']) %}
+              {% set ns.items = ns.items + [(s.state | int(0), s.name)] %}
+            {% endfor %}
+            {% set out = namespace(rows=[]) %}
+            {% for level, name in (ns.items | sort(attribute='0'))[:8] %}
+              {% set colour = 'red' if level < 20 else 'yellow' if level < 50 else 'green' %}
+              {% set out.rows = out.rows + ['row|' ~ level ~ '|%|' ~ name[:18] ~ '|' ~ colour ~ '|battery-high'] %}
+            {% endfor %}
+            {{ out.rows }}
+```
+
+### Departures with the line's number
+
+A badge (an icon field that starts with `#`) shows a line's number in a box, as on a departure board. Where the list
+comes from depends on your integration; here it is an attribute `departures` with `line`, `destination` and `minutes`
+for each, so change those names to what your sensor has.
+
+```yaml
+template:
+  - sensor:
+      - name: Departures card
+        state: "{{ now().minute }}"
+        attributes:
+          elements: >
+            {% set ns = namespace(rows=[]) %}
+            {% for d in (state_attr('sensor.main_station_departures', 'departures') or [])[:8] %}
+              {% set when = 'now|' if d.minutes | int(0) == 0 else d.minutes ~ '|min' %}
+              {% set ns.rows = ns.rows + ['row|' ~ when ~ '|' ~ d.destination[:18] ~ '|blue|#' ~ d.line] %}
+            {% endfor %}
+            {{ ns.rows }}
+```
+
+### Counts with a share and a line of words
+
+Two counts, their share as a bar, and when they were counted.
+
+```yaml
+template:
+  - sensor:
+      - name: Entrance card
+        state: "{{ states('sensor.entrance_scanned') }}"
+        attributes:
+          elements: >
+            {% set s = states('sensor.entrance_scanned') | int(0) %}
+            {% set v = states('sensor.entrance_valid') | int(0) %}
+            {% set p = (100 * s / v) | round(0) | int if v else 0 %}
+            {{ [
+              'value|' ~ s ~ '||Scanned',
+              'value|' ~ v ~ '||Valid',
+              'bar|' ~ p ~ '|%|Share|blue||0|100',
+              'text|Counted at ' ~ states('sensor.entrance_time') ~ '||||clock-outline'
             ] }}
 ```
 
 ## The parts
 
-Each part is one text, its fields split by `|`, in this order: the kind, the value, the unit, the label, the colour,
-the icon, and for a bar its lowest and highest value. Fields at the end may be left out.
+Each part is one text, its fields split by `|` in this order: kind, value, unit, label, colour, icon, and for a bar its
+lowest and highest value. Fields at the end may be left out; a field in the middle stays empty (`value|3||Open`).
 
-- `value`: a number with its unit, such as `value|21.4|°C|Temperature||thermometer`.
-- `bar`: a number with a bar under it, from its lowest to its highest value (0 and 100 when left out), such as
-  `bar|820|ppm|CO2|yellow||400|2000`.
-- `text`: a line of words, such as `text|Door open||||door-open`. A long one takes two lines where the card has room.
-- `row`: a row of a table, its label at the left and its value at the right, such as `row|20.8|°C|Kitchen`. Rows
-  that follow each other stand as a table, their values in one column: a list of rooms, batteries or departures.
+| Kind | What it shows | Example |
+|---|---|---|
+| `value` | A number or a word with its unit, the label and icon above it. | `value\|21.4\|°C\|Temperature\|blue\|thermometer` |
+| `bar` | A number with a bar under it, from its lowest to its highest value (0 and 100 when left out). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
+| `text` | A line of words; a long one takes two lines where the card has room. | `text\|Door open\|\|\|\|door-open` |
+| `row` | A row of a table: its label at the left, its value at the right. Rows that follow each other stand as a table. | `row\|20.8\|°C\|Kitchen` |
 
-A colour is `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles it
-marks a part and never paints its words: it colours the icon (a dot where the part has none) and the bar. The colours
-that say how good a level is are Tessera's own, readable in light and dark: `green` good, `yellow` and `orange`
-moderate, `red` bad, `blue` the accent. An icon is a name from the editor's icon picker, with or without `mdi:`.
+- **Colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles
+  it marks a part and never paints its words: it colours the icon (a dot where the part has none), the bar and a
+  badge. `green` good, `yellow` and `orange` moderate, `red` bad and `blue` the accent are Tessera's own colours,
+  readable in light and dark.
+- **Icon**: a name from the editor's icon picker, with or without `mdi:`.
+- **Badge**: an icon field that starts with `#` shows the words after it in a box of the part's colour (the accent
+  without one), such as a line's number: `row|4|min|Main station|blue|#16`. At most 8 characters.
 
 ## Good to know
 
 - Home Assistant renders the template; the tile changes whenever the sensor does. Work out levels and colours in the
   template, round values there, and write the decimal sign you want.
-- At most eight parts (two rows of four values), each at most 48 bytes: Tessera cuts longer texts, so keep labels short.
+- At most eight parts (two rows of four values), each at most 48 bytes: Tessera cuts longer texts, so keep labels short
+  (the examples cut names with `[:18]`).
 - Where a tile is too small for every part, the values stand two to a row, or one, and the lines that fit whole show:
   no number is cut short and no line cut in half. A text beside other parts on a flat tile stays whole where the parts
   can stand under each other instead.
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
 - When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
+- A plugin tile cannot take a whole page; any other size of the grid is fine.
 - The tile's background colour is set in the editor, as for every tile.
 
 ## How it works
