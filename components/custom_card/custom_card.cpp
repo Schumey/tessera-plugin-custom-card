@@ -317,9 +317,10 @@ class Drawing {
     return true;
   }
   int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
-  // The words of a text and of a bar across the width: one step above the body, and the body itself where the values
-  // had to go down to it, so a tall list of texts shrinks with them instead of running out of the tile.
-  static Font words_face(Font face) { return face == Font::BODY ? Font::BODY : Font::BODY_LARGE; }
+  // The words of a text, a row and a bar across the width: one step above the body (or larger, words_, where the card
+  // has the room), and the body itself where the values had to go down to it, so a tall list of texts shrinks with
+  // them instead of running out of the tile.
+  Font words_face(Font face) const { return face == Font::BODY ? Font::BODY : words_; }
   // How many lines a text across the width takes: two where it is longer than the width and the layout lets words
   // stay whole (whole_texts_), else one that ends in dots.
   int text_lines(const Part &part, Font face) const {
@@ -382,9 +383,11 @@ class Drawing {
       if (line.across) {
         // A row's value whole at the right, its label taking what is left.
         const Part &part = parts_[line.first];
+        // Where the words grow (strict_rows_), the label whole beside it too.
         if (part.kind == Kind::ROW &&
             (has_mark(part) ? mark_width(part, Font::ICON_SMALL) + ui::px(6) : 0) +
-                    ui::text_width(part.value, words_face(face)) + unit_width(part) > width_)
+                    ui::text_width(part.value, words_face(face)) + unit_width(part) +
+                    (strict_rows_ ? ui::px(8) + ui::text_width(part.label, words_face(face)) : 0) > width_)
           return false;
         continue;
       }
@@ -392,7 +395,7 @@ class Drawing {
         const Part &part = parts_[i];
         if (part.kind == Kind::TEXT) {
           // A text beside other parts (a flat tile) has its words whole where another arrangement allows it.
-          if (whole_texts_ && line.count > 1 && mark_width(part, Font::ICON_SMALL) + (has_mark(part) ? ui::px(6) : 0) +
+          if ((whole_texts_ || strict_rows_) && line.count > 1 && mark_width(part, Font::ICON_SMALL) + (has_mark(part) ? ui::px(6) : 0) +
                                         ui::text_width(part.value, words_face(face)) > column)
             return false;
           continue;
@@ -426,6 +429,7 @@ class Drawing {
       show(note_, true);
       return;
     }
+    words_ = Font::BODY_LARGE;
     const Lines arrangements[] = {side_by_side(), stacked()};
     const bool named = !shown_name_.empty();
     struct Try { bool head, labels; };
@@ -469,6 +473,19 @@ class Drawing {
     }
     // What the lines below are measured with: the choice that fitted, else texts on one line.
     whole_texts_ = whole_chosen;
+    // Rows and texts a step larger (HEADLINE; TITLE is the bold face of names, no larger) where the card has room for
+    // them: never larger than its values, and never a row's label or a text beside other parts cut short for it.
+    if (found) {
+      bool values = false;
+      for (const Part &part : parts_)
+        if (part.kind == Kind::VALUE || part.kind == Kind::BAR) values = true;
+      if (!values || rank(Font::HEADLINE) >= rank(face)) {
+        strict_rows_ = true;
+        words_ = Font::HEADLINE;
+        if (!fits(*lines, face, chosen.head, chosen.labels)) words_ = Font::BODY_LARGE;
+        strict_rows_ = false;
+      }
+    }
     // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
     // show (below).
     if (!found)
@@ -640,7 +657,9 @@ class Drawing {
   tessera::Text name_, shown_name_, note_text_;
   tessera::List<Part> parts_;
   Lines fallback_;  // the arrangement of a tile where nothing fits, which `lines` may point to
-  mutable bool whole_texts_ = true;  // texts whole: beside other parts only where they fit, across in two lines
+  mutable bool whole_texts_ = true;
+  Font words_ = Font::BODY_LARGE;     // the face of texts, rows and bars across, chosen by layout()
+  bool strict_rows_ = false;          // while layout() tries larger words: labels and texts beside parts stay whole  // texts whole: beside other parts only where they fit, across in two lines
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};
 };

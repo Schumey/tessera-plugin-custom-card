@@ -4,6 +4,7 @@
 - Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die
   Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.
 - Eine lange Textzeile nimmt zwei Zeilen, wo die Karte Platz hat, statt mit Punkten zu enden.
+- Tabellen- und Textzeilen bekommen eine größere Schrift, wo die Karte Platz hat, nie größer als ihre Werte.
 - Die Werte einer kürzeren Reihe stehen unter den Spalten der Reihe darüber, statt sich über die Breite zu verteilen.
 - Die Karte hält ihre Teile im PSRAM des Bildschirms, so bleibt der Speicher frei, den das WLAN braucht.
 - Braucht Tessera 0.4.88 oder neuer.

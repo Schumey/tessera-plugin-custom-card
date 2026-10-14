@@ -4,6 +4,7 @@
 - A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the
   values of a list (rooms, batteries, departures) stand under each other.
 - A long line of words takes two lines where the card has the room, instead of ending in dots.
+- Rows and lines of words take a larger face where the card has room for it, never larger than its values.
 - Values of a shorter row stand under the columns of the row above it instead of spreading over the width.
 - The card keeps its parts in the screen's PSRAM, so the memory Wi-Fi needs stays free.
 - Needs Tessera 0.4.88 or later.
