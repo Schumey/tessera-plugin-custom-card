@@ -1,6 +1,6 @@
 # Änderungen
 
-## 0.5.0
+## 0.5.0 - 2026-10-14
 - Große Zahlen auf großen Tiles: Wo sie passen und alle Werte Zahlen sind, bekommen die Werte die großen Ziffern
   der Klimakarte von Tessera. Ein Wert mit einem Wort darin behält seine bisherige Schrift.
 - Grün, Gelb, Orange, Rot und Blau sind Tesseras eigene Farben nach Bedeutung (gut, mäßig, schlecht, Akzent), hell und
@@ -9,7 +9,7 @@
   abgeschnitten zu werden.
 - Ein Text neben anderen Teilen auf einer flachen Kachel bleibt ganz, wo die Teile stattdessen untereinander stehen
   können; Labels gehen weiterhin vor.
-- Braucht Tessera mit Plugin-API 0.9 (das Release nach 0.4.87).
+- Braucht Tessera 0.4.88 oder neuer: eine ältere bietet weiter 0.4.3 an.
 
 ## 0.4.3 - 2026-10-12
 - Bis zu acht Teile auf einer Karte statt sechs: zwei volle Reihen mit vier Werten. Jede Kachel der Karte kostet den
