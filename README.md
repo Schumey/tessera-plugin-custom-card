@@ -143,7 +143,8 @@ template:
 
 ### Counts with a share and a line of words
 
-Two counts, their share as a bar, and when they were counted.
+Two counts, their share as a bar, and when they were counted. With `ring` instead of `bar` the share stands beside the
+counts as a small ring with its number inside.
 
 ```yaml
 template:
@@ -174,7 +175,7 @@ a ring its lowest and highest value. Fields at the end may be left out; a field 
 | `bar` | A number with a bar under it, from its lowest to its highest value (0 and 100 when left out). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | A line of words; a long one takes two lines where the card has room. | `text\|Door open\|\|\|\|door-open` |
 | `row` | A row of a table: its label at the left, its value at the right. Rows that follow each other stand as a table. | `row\|20.8\|°C\|Kitchen` |
-| `ring` | A ring filled from its lowest to its highest value (0 and 100 when left out), the icon inside, the value under it. Rings that follow each other stand side by side; where they do not fit, the number stands as a value. | `ring\|46\|%\|Humidity\|green\|water-percent\|0\|100` |
+| `ring` | A ring filled from its lowest to its highest value (0 and 100 when left out), the icon inside, the value under it. Rings that follow each other stand side by side; on a card with values a ring stands among them, compact, its number inside; where they do not fit, the number stands as a value. | `ring\|46\|%\|Humidity\|green\|water-percent\|0\|100` |
 
 - **Colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles
   it marks a part and never paints its words: it colours the icon (a dot where the part has none), the bar and a

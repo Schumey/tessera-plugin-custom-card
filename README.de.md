@@ -146,7 +146,8 @@ template:
 
 ### Zählungen mit Anteil und Textzeile
 
-Zwei Zählungen, ihr Anteil als Balken und wann gezählt wurde.
+Zwei Zählungen, ihr Anteil als Balken und wann gezählt wurde. Mit `ring` statt `bar` steht der Anteil als kleiner Ring
+mit seiner Zahl innen neben den Zählungen.
 
 ```yaml
 template:
@@ -178,7 +179,7 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
 | `bar` | Eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | Eine Textzeile; eine lange nimmt zwei Zeilen, wo die Karte Platz hat. | `text\|Tür offen\|\|\|\|door-open` |
 | `row` | Eine Zeile einer Tabelle: das Label links, der Wert rechts. Aufeinanderfolgende Zeilen stehen als Tabelle. | `row\|20,8\|°C\|Küche` |
-| `ring` | Ein Ring, gefüllt vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), das Icon innen, der Wert darunter. Aufeinanderfolgende Ringe stehen nebeneinander; wo sie nicht passen, steht die Zahl als Wert. | `ring\|46\|%\|Feuchte\|green\|water-percent\|0\|100` |
+| `ring` | Ein Ring, gefüllt vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), das Icon innen, der Wert darunter. Aufeinanderfolgende Ringe stehen nebeneinander; auf einer Karte mit Werten steht ein Ring kompakt zwischen ihnen, seine Zahl innen; wo sie nicht passen, steht die Zahl als Wert. | `ring\|46\|%\|Feuchte\|green\|water-percent\|0\|100` |
 
 - **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras eigenen
   Tiles markiert sie einen Teil und färbt nie seine Schrift: Sie färbt das Icon (einen Punkt, wo der Teil keins hat),

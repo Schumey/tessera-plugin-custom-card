@@ -272,7 +272,7 @@ class Drawing {
                             : own ? own : theme::hex(theme::ACCENT);
       lv_obj_set_style_arc_color(s.arc, ui::color(theme::TRACK), LV_PART_MAIN);
       lv_obj_set_style_arc_color(s.arc, theme::rgb(mark), LV_PART_INDICATOR);
-      if (i < parts_.size() && as_ring(parts_[i])) {
+      if (i < parts_.size() && meter(parts_[i])) {
         lv_obj_set_style_bg_color(s.dot, theme::rgb(theme::mix(mark, theme::hex(theme::CARD), 70)), 0);
         lv_obj_set_style_text_color(s.badge, theme::rgb(readable(mark)), 0);
       }
@@ -321,7 +321,7 @@ class Drawing {
       // Values side by side, rings side by side, never a ring beside a value.
       const bool value = parts_[i].kind == Kind::VALUE || parts_[i].kind == Kind::RING;
       if (value && !out.empty() && !out.back().across && out.back().count < in_row &&
-          as_ring(parts_[out.back().first]) == as_ring(parts_[i]))
+          meter(parts_[out.back().first]) == meter(parts_[i]))
         ++out.back().count;
       else
         out.push_back({i, 1, !value});
@@ -378,6 +378,16 @@ class Drawing {
   }
   // A ring where the layout lets parts be rings (rings_), else its number as a value with its mark.
   bool as_ring(const Part &part) const { return part.kind == Kind::RING && rings_; }
+  // On a card with values too (mixed_), a ring stands among them, as tall as their numbers, with its number inside
+  // (compact); on a card of rings it is the meter's ring, its number under it.
+  bool compact(const Part &part) const { return as_ring(part) && mixed_; }
+  bool meter(const Part &part) const { return as_ring(part) && !mixed_; }
+  // A compact ring: as tall as the values' face, its stroke a twelfth, the face of the number inside it.
+  static int compact_thick(int dia) { return std::max(ui::px(3), dia / 12); }
+  static Font compact_face(const Part &part, int dia, int unit) {
+    const int inside = dia - 2 * compact_thick(dia) - ui::px(4);
+    return ui::text_width(part.value, Font::BODY_LARGE) + unit <= inside ? Font::BODY_LARGE : Font::BODY;
+  }
   // A ring's size follows the face the values take, so a ring shrinks with them on a smaller tile: its diameter, its
   // stroke as the meter's (a fourteenth), the face of its value under the open bottom and its height with the label.
   static int ring_dia(Font face) {
@@ -429,7 +439,7 @@ class Drawing {
         case Kind::VALUE:
         case Kind::ROW: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::RING:
-          h = std::max(h, as_ring(parts_[i]) ? ring_height(face) : words + ui::line_height(face));
+          h = std::max(h, meter(parts_[i]) ? ring_height(face) : words + ui::line_height(face));
           break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
@@ -455,7 +465,15 @@ class Drawing {
       }
       for (int i = line.first; i < line.first + line.count; ++i) {
         const Part &part = parts_[i];
-        if (as_ring(part)) {
+        if (compact(part)) {
+          // Its number inside it at least in the body face.
+          const int dia = ui::line_height(face);
+          if (dia > column ||
+              ui::text_width(part.value, Font::BODY) + unit_width(part) > dia - 2 * compact_thick(dia))
+            return false;
+          continue;
+        }
+        if (meter(part)) {
           if (column < ring_dia(face) ||
               ui::text_width(shape(part.value), ring_value_face(face)) + unit_width(part) > column)
             return false;
@@ -549,6 +567,7 @@ class Drawing {
       if (part.kind == Kind::RING) rings = true;
       if (part.kind == Kind::VALUE || part.kind == Kind::BAR) values = true;
     }
+    mixed_ = rings && values;
     // Rings drawn as rings first. Where no arrangement takes them (a flat tile), or where they would make the card's
     // other values smaller than they are without them, their numbers stand as values.
     Pick pick = search(true, named, unmarked);
@@ -731,6 +750,24 @@ class Drawing {
     }
   }
 
+  // A compact ring at (x, y) where a value would stand: as tall as the values' face, filled from min to max, its number
+  // and unit in the middle.
+  void place_compact_ring(Slot &s, const Part &part, int x, int y, Font face) {
+    const int dia = ui::line_height(face), thick = compact_thick(dia);
+    lv_obj_set_size(s.arc, dia, dia);
+    lv_obj_set_pos(s.arc, x, y);
+    lv_obj_set_style_arc_width(s.arc, thick, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(s.arc, thick, LV_PART_INDICATOR);
+    float value, share = 0;
+    if (number_of(part.value, &value) && part.max > part.min)
+      share = std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
+    lv_arc_set_value(s.arc, static_cast<int>(std::lround(share * 1000)));
+    show(s.arc, true);
+    const Font inner = compact_face(part, dia, unit_width(part));
+    const int vw = std::min(dia, ui::text_width(part.value, inner) + unit_width(part));
+    place_value(s, part, inner, x + (dia - vw) / 2, y + (dia - ui::line_height(inner)) / 2, dia);
+  }
+
   // A bar `width` wide at (x, y), filled from min to max.
   void place_bar(Slot &s, const Part &part, int x, int y, int width) {
     const int thick = bar_thickness();
@@ -782,7 +819,7 @@ class Drawing {
       const Part &part = parts_[line.first + k];
       Slot &s = slots_[line.first + k];
       const int x = k * (column + column_gap());
-      if (as_ring(part)) {
+      if (meter(part)) {
         place_ring(s, part, x, y, column, face);
         continue;
       }
@@ -796,9 +833,13 @@ class Drawing {
       if (words) {
         place_words(s, part, x, y, words_row(), column, Font::BODY, s.label, part.label);
         vy += words_row();
-      } else if (has_mark(part)) {
+      } else if (has_mark(part) && !compact(part)) {
         // No row for the words: the mark stands before the number, centred on it, and says what it is.
         room = place_mark(s, part, x, y, ui::line_height(face), inline_icon(face)) + ui::px(6);
+      }
+      if (compact(part)) {
+        place_compact_ring(s, part, x, vy, face);
+        continue;
       }
       place_value(s, part, face, x + room, vy, column - room);
       if (part.kind == Kind::BAR) place_bar(s, part, x, vy + ui::line_height(face) + ui::px(4), column);
@@ -815,6 +856,7 @@ class Drawing {
   mutable bool whole_texts_ = true;
   Font words_ = Font::BODY_LARGE;     // the face of texts, rows and bars across, chosen by layout()
   bool rings_ = true;                 // rings drawn as rings (layout() falls back to values where none fits)
+  bool mixed_ = false;                // rings among values: compact rings in the values' rows
   Lines arranged_[2];                 // side by side and stacked, for the rings_ that layout() chose
   bool strict_rows_ = false;          // while layout() tries larger words: labels and texts beside parts stay whole  // texts whole: beside other parts only where they fit, across in two lines
   Slot slots_[MAX_PARTS];
