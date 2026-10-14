@@ -22,6 +22,9 @@ namespace ui = tessera::ui;
 //   text|<words>|||<colour>|<icon>
 //   row|<value>|<unit>|<label>|<colour>|<icon>
 //
+// An icon field that starts with "#" is a badge instead, as a line's number in the departures plugin: the words after
+// it in a box of the part's colour (the accent where it has none), e.g. row|4|min|Main station|blue|#16.
+//
 // Fields at the end may be left out. A colour is one of the key colours of theme.h (red, orange, yellow, green, mint,
 // blue, purple, pink, gray): it paints the part's icon (a dot where it has none) and its bar, never its words. The
 // colours that mean something are Tessera's tones (plugin API 0.9), readable on the card in both looks: green is GOOD,
@@ -75,6 +78,7 @@ struct Part {
   uint32_t colour = 0;  // a key colour of theme.h, 0 for the card's own paint
   Tone tone = Tone::NORMAL;  // the tone the colour means, NORMAL for a colour without one
   uint32_t icon = 0;    // a codepoint of Tessera's set, 0 for none
+  char badge[9] = "";   // a badge's words ("16", "S3"), "" for none
   float min = 0, max = 100;
 };
 
@@ -136,7 +140,8 @@ static bool parse(const std::string &line, Part *part) {
   copy_to(part->label, at(3));
   part->colour = theme::key_swatch(at(4));
   part->tone = tone_of(at(4));
-  part->icon = icon_of(at(5));
+  if (at(5).rfind('#', 0) == 0) copy_to(part->badge, at(5).substr(1));
+  else part->icon = icon_of(at(5));
   float n;
   if (number_of(at(6), &n)) part->min = n;
   if (number_of(at(7), &n)) part->max = n;
@@ -170,6 +175,10 @@ class Drawing {
       s.icon = ui::label(parent, Font::ICON_SMALL, theme::MUTED);
       s.dot = ui::block(parent, theme::MUTED);
       lv_obj_set_style_radius(s.dot, LV_RADIUS_CIRCLE, 0);
+      // A badge's words inside its box, as the departures plugin keeps a line's number in its badge.
+      s.badge = ui::label(s.dot, Font::TITLE, theme::ON_ACCENT);
+      lv_label_set_long_mode(s.badge, LV_LABEL_LONG_CLIP);
+      lv_obj_set_style_text_align(s.badge, LV_TEXT_ALIGN_CENTER, 0);
       s.label = ui::label(parent, Font::BODY, theme::MUTED);
       s.value = ui::label(parent, Font::VALUE, theme::INK);
       s.unit = ui::label(parent, Font::BODY, theme::MUTED);
@@ -246,12 +255,23 @@ class Drawing {
         ui::set_color(s.icon, theme::MUTED);
         lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
       }
+      if (i < parts_.size() && parts_[i].badge[0]) {
+        // A badge: its box in the part's colour or the accent, its words in whichever of the look's own colours
+        // reads best on it.
+        const uint32_t box = tone != Tone::NORMAL ? lv_color_to_u32(ui::tone_color(tone, theme::ACCENT))  // the alpha byte is ignored
+                             : own ? own : theme::hex(theme::ACCENT);
+        lv_obj_set_style_bg_color(s.dot, theme::rgb(box), 0);
+        uint32_t words = theme::hex(theme::ON_ACCENT);
+        for (theme::Role role : {theme::INK, theme::CARD})
+          if (contrast(theme::hex(role), box) > contrast(words, box)) words = theme::hex(role);
+        lv_obj_set_style_text_color(s.badge, theme::rgb(words), 0);
+      }
     }
   }
 
  private:
   struct Slot {
-    lv_obj_t *icon{}, *dot{}, *label{}, *value{}, *unit{}, *track{}, *fill{};
+    lv_obj_t *icon{}, *dot{}, *label{}, *value{}, *unit{}, *track{}, *fill{}, *badge{};
   };
   // Parts side by side in columns, or a bar or a text alone across the width (`across`: its words left, its value
   // right, the bar under them).
@@ -270,7 +290,7 @@ class Drawing {
     show(head_, false);
     show(note_, false);
     for (Slot &s : slots_)
-      for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track}) show(obj, false);
+      for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track, s.badge}) show(obj, false);
   }
 
   // Stacked: values that follow each other side by side (at most `in_row`), a bar and a text alone across the width.
@@ -340,7 +360,10 @@ class Drawing {
   int column_width(int count) const { return (width_ - (count - 1) * column_gap()) / count; }
 
   // A part's mark: its icon, or a dot in its colour where it has no icon, or nothing.
-  bool has_mark(const Part &part) const { return part.icon || part.colour; }
+  bool has_mark(const Part &part) const { return part.icon || part.colour || part.badge[0]; }
+  // A badge's box: its words in the bold face of names with room on both sides, as the departures plugin's.
+  static int badge_pad() { return ui::px(ui::large() ? 8 : 5); }
+  static int badge_width(const Part &part) { return ui::text_width(part.badge, Font::TITLE) + 2 * badge_pad(); }
   bool has_words(const Line &line) const {
     for (int i = line.first; i < line.first + line.count; ++i)
       if (parts_[i].label[0] || has_mark(parts_[i])) return true;
@@ -352,6 +375,7 @@ class Drawing {
     return ui::line_height(Font::ICON) <= ui::line_height(face) ? Font::ICON : Font::ICON_SMALL;
   }
   int mark_width(const Part &part, Font icon_face) const {
+    if (part.badge[0]) return badge_width(part);
     return part.icon ? ui::text_width(ui::icon(part.icon), icon_face) : part.colour ? dot_size() : 0;
   }
   int unit_width(const Part &part) const {
@@ -522,6 +546,20 @@ class Drawing {
 
   // A part's mark at (x, y), centred on a row `h` high, in `icon_face`; returns its width.
   int place_mark(Slot &s, const Part &part, int x, int y, int h, Font icon_face) {
+    if (part.badge[0]) {
+      // The box as tall as the bold face and a little more, at most the row; its words centred in it.
+      const int w = badge_width(part), th = ui::line_height(Font::TITLE);
+      const int bh = std::min(h, th + ui::px(ui::large() ? 6 : 4));
+      lv_obj_set_size(s.dot, w, bh);
+      lv_obj_set_pos(s.dot, x, y + (h - bh) / 2);
+      lv_obj_set_style_radius(s.dot, ui::px(ui::large() ? 6 : 4), 0);
+      show(s.dot, true);
+      ui::set_text(s.badge, part.badge);
+      lv_obj_set_size(s.badge, w, th);
+      lv_obj_center(s.badge);
+      show(s.badge, true);
+      return w;
+    }
     if (part.icon) {
       const std::string glyph = ui::icon(part.icon);
       const int w = ui::text_width(glyph, icon_face), ih = ui::line_height(icon_face);
@@ -534,6 +572,7 @@ class Drawing {
     }
     if (part.colour) {
       const int d = dot_size();
+      lv_obj_set_style_radius(s.dot, LV_RADIUS_CIRCLE, 0);
       lv_obj_set_size(s.dot, d, d);
       lv_obj_set_pos(s.dot, x, y + (h - d) / 2);
       show(s.dot, true);

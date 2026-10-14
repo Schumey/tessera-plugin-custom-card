@@ -5,6 +5,8 @@
   values of a list (rooms, batteries, departures) stand under each other.
 - A long line of words takes two lines where the card has the room, instead of ending in dots.
 - Rows and lines of words take a larger face where the card has room for it, never larger than its values.
+- A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
+  list of departures (`row|4|min|Main station|blue|#16`).
 - Values of a shorter row stand under the columns of the row above it instead of spreading over the width.
 - The card keeps its parts in the screen's PSRAM, so the memory Wi-Fi needs stays free.
 - Needs Tessera 0.4.88 or later.
