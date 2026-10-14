@@ -5,6 +5,9 @@
   Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.
 - Eine lange Textzeile nimmt zwei Zeilen, wo die Karte Platz hat, statt mit Punkten zu enden.
 - Tabellen- und Textzeilen bekommen eine größere Schrift, wo die Karte Platz hat, nie größer als ihre Werte.
+- Ein Ring: `ring`-Teile stehen als Ringe im Look von Tesseras Meter, mehrere nebeneinander (die Luft eines Raums, die
+  Akkus im Haus), das Icon in einer blassen Scheibe und der Wert unter der Öffnung. Auf einem zu kleinen Tile, oder wo
+  sie die anderen Werte der Karte kleiner machen würden, stehen ihre Zahlen als Werte.
 - Ein Kästchen: Ein Icon-Feld, das mit `#` beginnt, zeigt seinen Text in einem Kästchen in der Farbe des Teils, wie die
   Liniennummer in einer Abfahrtsliste (`row|4|min|Hauptbahnhof|blue|#16`).
 - Die Werte einer kürzeren Reihe stehen unter den Spalten der Reihe darüber, statt sich über die Breite zu verteilen.

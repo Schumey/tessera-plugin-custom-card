@@ -49,6 +49,27 @@ template:
             ] }}
 ```
 
+### Die Luft eines Raums als Ringe
+
+Ringe im Look von Tesseras Meter, nebeneinander: jeder gefüllt vom kleinsten bis zum größten Wert.
+
+```yaml
+template:
+  - sensor:
+      - name: Luft-Karte
+        state: "{{ states('sensor.buero_co2') }}"
+        attributes:
+          elements: >
+            {% set c = states('sensor.buero_co2') | int(0) %}
+            {% set h = states('sensor.buero_feuchte') | int(0) %}
+            {{ [
+              'ring|' ~ c ~ '|ppm|CO2|' ~ ('green' if c < 800 else 'yellow' if c < 1200 else 'red')
+                ~ '|molecule-co2|400|2000',
+              'ring|' ~ h ~ '|%|Feuchte|' ~ ('green' if 40 <= h <= 60 else 'orange') ~ '|water-percent|0|100',
+              'ring|' ~ states('sensor.buero_temperatur') ~ '|°C|Temperatur|blue|thermometer|10|30'
+            ] }}
+```
+
 ### Eine Tabelle der Räume
 
 Aufeinanderfolgende Zeilen stehen als Tabelle: die Namen links, die Werte rechts in einer Spalte.
@@ -148,7 +169,7 @@ template:
 ## Die Teile
 
 Jeder Teil ist ein Text, seine Felder durch `|` getrennt in dieser Reihenfolge: Art, Wert, Einheit, Label, Farbe, Icon
-und bei einem Balken sein kleinster und größter Wert. Felder am Ende dürfen fehlen; ein Feld in der Mitte bleibt leer
+und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende dürfen fehlen; ein Feld in der Mitte bleibt leer
 (`value|3||Offen`).
 
 | Art | Was sie zeigt | Beispiel |
@@ -157,6 +178,7 @@ und bei einem Balken sein kleinster und größter Wert. Felder am Ende dürfen f
 | `bar` | Eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | Eine Textzeile; eine lange nimmt zwei Zeilen, wo die Karte Platz hat. | `text\|Tür offen\|\|\|\|door-open` |
 | `row` | Eine Zeile einer Tabelle: das Label links, der Wert rechts. Aufeinanderfolgende Zeilen stehen als Tabelle. | `row\|20,8\|°C\|Küche` |
+| `ring` | Ein Ring, gefüllt vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), das Icon innen, der Wert darunter. Aufeinanderfolgende Ringe stehen nebeneinander; wo sie nicht passen, steht die Zahl als Wert. | `ring\|46\|%\|Feuchte\|green\|water-percent\|0\|100` |
 
 - **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras eigenen
   Tiles markiert sie einen Teil und färbt nie seine Schrift: Sie färbt das Icon (einen Punkt, wo der Teil keins hat),

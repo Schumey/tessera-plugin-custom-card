@@ -5,6 +5,9 @@
   values of a list (rooms, batteries, departures) stand under each other.
 - A long line of words takes two lines where the card has the room, instead of ending in dots.
 - Rows and lines of words take a larger face where the card has room for it, never larger than its values.
+- A ring: `ring` parts stand as rings in the look of Tessera's meter, several side by side (the air of a room, the
+  batteries of the house), the icon in a pale disc and the value under the open bottom. On a tile too small for
+  them, or where they would make the card's other values smaller, their numbers stand as values.
 - A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
   list of departures (`row|4|min|Main station|blue|#16`).
 - Values of a shorter row stand under the columns of the row above it instead of spreading over the width.

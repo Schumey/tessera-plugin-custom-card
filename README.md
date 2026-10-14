@@ -46,6 +46,27 @@ template:
             ] }}
 ```
 
+### The air of a room as rings
+
+Rings in the look of Tessera's meter, side by side: each filled from its lowest to its highest value.
+
+```yaml
+template:
+  - sensor:
+      - name: Air card
+        state: "{{ states('sensor.office_co2') }}"
+        attributes:
+          elements: >
+            {% set c = states('sensor.office_co2') | int(0) %}
+            {% set h = states('sensor.office_humidity') | int(0) %}
+            {{ [
+              'ring|' ~ c ~ '|ppm|CO2|' ~ ('green' if c < 800 else 'yellow' if c < 1200 else 'red')
+                ~ '|molecule-co2|400|2000',
+              'ring|' ~ h ~ '|%|Humidity|' ~ ('green' if 40 <= h <= 60 else 'orange') ~ '|water-percent|0|100',
+              'ring|' ~ states('sensor.office_temperature') ~ '|°C|Temperature|blue|thermometer|10|30'
+            ] }}
+```
+
 ### A table of rooms
 
 Rows that follow each other stand as a table: the names at the left, the values in one column at the right.
@@ -144,8 +165,8 @@ template:
 
 ## The parts
 
-Each part is one text, its fields split by `|` in this order: kind, value, unit, label, colour, icon, and for a bar its
-lowest and highest value. Fields at the end may be left out; a field in the middle stays empty (`value|3||Open`).
+Each part is one text, its fields split by `|` in this order: kind, value, unit, label, colour, icon, and for a bar or
+a ring its lowest and highest value. Fields at the end may be left out; a field in the middle stays empty (`value|3||Open`).
 
 | Kind | What it shows | Example |
 |---|---|---|
@@ -153,6 +174,7 @@ lowest and highest value. Fields at the end may be left out; a field in the midd
 | `bar` | A number with a bar under it, from its lowest to its highest value (0 and 100 when left out). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | A line of words; a long one takes two lines where the card has room. | `text\|Door open\|\|\|\|door-open` |
 | `row` | A row of a table: its label at the left, its value at the right. Rows that follow each other stand as a table. | `row\|20.8\|°C\|Kitchen` |
+| `ring` | A ring filled from its lowest to its highest value (0 and 100 when left out), the icon inside, the value under it. Rings that follow each other stand side by side; where they do not fit, the number stands as a value. | `ring\|46\|%\|Humidity\|green\|water-percent\|0\|100` |
 
 - **Colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles
   it marks a part and never paints its words: it colours the icon (a dot where the part has none), the bar and a
