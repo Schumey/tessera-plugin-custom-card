@@ -5,7 +5,7 @@ drawn by the screen in its own fonts and colours. A room's climate on one tile, 
 whatever a template can say.
 
 On a tile one row high and two columns or more, the parts stand side by side, each with its label and icon above it
-and a bar under its value. Any other tile stacks them: values side by side, a bar or a line of words across the width.
+and a bar under its value. Any other tile stacks them: values side by side, a bar, a line of words or a row of a table across the width.
 The values take the largest face that fits beside the tile's name, on a large tile the climate card's large digits
 when every value is a number; the labels above them stay only where they cost the values nothing, else each icon
 stands before its number. A label without an icon or a colour always stays.
@@ -48,7 +48,9 @@ the icon, and for a bar its lowest and highest value. Fields at the end may be l
 - `value`: a number with its unit, such as `value|21.4|°C|Temperature||thermometer`.
 - `bar`: a number with a bar under it, from its lowest to its highest value (0 and 100 when left out), such as
   `bar|820|ppm|CO2|yellow||400|2000`.
-- `text`: a line of words, such as `text|Door open||||door-open`.
+- `text`: a line of words, such as `text|Door open||||door-open`. A long one takes two lines where the card has room.
+- `row`: a row of a table, its label at the left and its value at the right, such as `row|20.8|°C|Kitchen`. Rows
+  that follow each other stand as a table, their values in one column: a list of rooms, batteries or departures.
 
 A colour is `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles it
 marks a part and never paints its words: it colours the icon (a dot where the part has none) and the bar. The colours

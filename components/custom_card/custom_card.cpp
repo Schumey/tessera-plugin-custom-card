@@ -20,12 +20,14 @@ namespace ui = tessera::ui;
 //   value|<value>|<unit>|<label>|<colour>|<icon>
 //   bar|<value>|<unit>|<label>|<colour>|<icon>|<min>|<max>
 //   text|<words>|||<colour>|<icon>
+//   row|<value>|<unit>|<label>|<colour>|<icon>
 //
 // Fields at the end may be left out. A colour is one of the key colours of theme.h (red, orange, yellow, green, mint,
 // blue, purple, pink, gray): it paints the part's icon (a dot where it has none) and its bar, never its words. The
 // colours that mean something are Tessera's tones (plugin API 0.9), readable on the card in both looks: green is GOOD,
 // yellow and orange BUSY, red ALERT, blue ACCENT; the others keep their key colour. An icon is a name of Tessera's set
-// (icons.h).
+// (icons.h). Rows that follow each other make a table: each row's label at the left, its value at the right, so the
+// values of a list stand under each other.
 
 // The tone a colour name means, as Tessera colours a level: good, moderate, bad, or the accent.
 static Tone tone_of(const std::string &name) {
@@ -63,16 +65,24 @@ static uint32_t icon_colour(uint32_t colour) { return readable(theme::icon(colou
 static constexpr int MAX_PARTS = 8;
 static constexpr int MAX_IN_ROW = 4;
 
-enum class Kind : uint8_t { VALUE, BAR, TEXT };
+enum class Kind : uint8_t { VALUE, BAR, TEXT, ROW };
 
+// Fixed fields, so the list of parts is one block in PSRAM (tessera::List, plugin API 0.10): Tessera cuts a part's
+// text at 48 bytes, so no field is longer.
 struct Part {
   Kind kind = Kind::VALUE;
-  std::string value, unit, label;
+  char value[49] = "", unit[25] = "", label[49] = "";
   uint32_t colour = 0;  // a key colour of theme.h, 0 for the card's own paint
   Tone tone = Tone::NORMAL;  // the tone the colour means, NORMAL for a colour without one
   uint32_t icon = 0;    // a codepoint of Tessera's set, 0 for none
   float min = 0, max = 100;
 };
+
+template <size_t N> static void copy_to(char (&to)[N], const std::string &from) {
+  const size_t n = std::min(from.size(), N - 1);
+  memcpy(to, from.data(), n);
+  to[n] = '\0';
+}
 
 static std::string trim(const std::string &text) {
   const size_t start = text.find_first_not_of(" \t\r\n");
@@ -119,10 +129,11 @@ static bool parse(const std::string &line, Part *part) {
   if (f[0] == "value") part->kind = Kind::VALUE;
   else if (f[0] == "bar") part->kind = Kind::BAR;
   else if (f[0] == "text") part->kind = Kind::TEXT;
+  else if (f[0] == "row") part->kind = Kind::ROW;
   else return false;
-  part->value = at(1);
-  part->unit = at(2);
-  part->label = at(3);
+  copy_to(part->value, at(1));
+  copy_to(part->unit, at(2));
+  copy_to(part->label, at(3));
   part->colour = theme::key_swatch(at(4));
   part->tone = tone_of(at(4));
   part->icon = icon_of(at(5));
@@ -150,7 +161,7 @@ class Drawing {
     width_ = width;
     height_ = height;
     flat_ = flat;
-    name_ = name;
+    name_ = roomy::text(name);
     titled_ = titled;
     head_ = ui::label(parent, Font::TITLE, theme::INK);
     note_ = ui::label(parent, Font::BODY, theme::MUTED);
@@ -172,7 +183,9 @@ class Drawing {
   void take(JsonObjectConst data) {
     parts_.clear();
     note_text_.clear();
-    shown_name_ = !titled_ ? "" : !name_.empty() ? name_ : std::string(data["name"] | "");
+    if (!titled_) shown_name_.clear();
+    else if (!name_.empty()) shown_name_ = name_;
+    else shown_name_ = data["name"] | "";
     const std::string wait = data["wait"] | "";
     JsonVariantConst elements = data["attributes"]["elements"];
     bool described = false;
@@ -199,8 +212,8 @@ class Drawing {
     } else if (!described) {
       // A sensor without `elements`: its own state and unit, as a plain value.
       Part part;
-      part.value = state;
-      part.unit = data["attributes"]["unit_of_measurement"] | "";
+      copy_to(part.value, state);
+      copy_to(part.unit, std::string(data["attributes"]["unit_of_measurement"] | ""));
       parts_.push_back(part);
     }
     layout();
@@ -246,6 +259,7 @@ class Drawing {
     int first, count;
     bool across;
   };
+  using Lines = tessera::List<Line>;
 
   static void show(lv_obj_t *obj, bool shown) {
     if (shown) lv_obj_remove_flag(obj, LV_OBJ_FLAG_HIDDEN);
@@ -260,8 +274,8 @@ class Drawing {
   }
 
   // Stacked: values that follow each other side by side (at most `in_row`), a bar and a text alone across the width.
-  std::vector<Line> stacked(int in_row = MAX_IN_ROW) const {
-    std::vector<Line> out;
+  Lines stacked(int in_row = MAX_IN_ROW) const {
+    Lines out;
     for (int i = 0; i < (int) parts_.size(); ++i) {
       const bool value = parts_[i].kind == Kind::VALUE;
       if (value && !out.empty() && !out.back().across && out.back().count < in_row)
@@ -272,9 +286,18 @@ class Drawing {
     return out;
   }
   // Side by side: every part a column of its own, on a wide tile one row high.
-  std::vector<Line> side_by_side() const {
-    if (!flat_ || parts_.empty() || parts_.size() > MAX_IN_ROW) return {};
-    return {{0, (int) parts_.size(), false}};
+  Lines side_by_side() const {
+    Lines out;
+    if (flat_ && !parts_.empty() && parts_.size() <= MAX_IN_ROW) out.push_back({0, (int) parts_.size(), false});
+    return out;
+  }
+  // The columns of an arrangement: as many as its fullest row of values, so a shorter row's values stand under the
+  // columns of the one above it instead of spreading over the width.
+  static int columns(const Lines &all) {
+    int most = 1;
+    for (const Line &line : all)
+      if (!line.across) most = std::max(most, line.count);
+    return most;
   }
 
   // The value's digits as zeros: the face is chosen for the shape of a value, never for its digits (as the departures
@@ -297,9 +320,16 @@ class Drawing {
   // The words of a text and of a bar across the width: one step above the body, and the body itself where the values
   // had to go down to it, so a tall list of texts shrinks with them instead of running out of the tile.
   static Font words_face(Font face) { return face == Font::BODY ? Font::BODY : Font::BODY_LARGE; }
-  // A text's row: its words, and the small icon's height only where it has a mark.
+  // How many lines a text across the width takes: two where it is longer than the width and the layout lets words
+  // stay whole (whole_texts_), else one that ends in dots.
+  int text_lines(const Part &part, Font face) const {
+    if (part.kind != Kind::TEXT || !whole_texts_) return 1;
+    const int mark = has_mark(part) ? mark_width(part, Font::ICON_SMALL) + ui::px(6) : 0;
+    return mark + ui::text_width(part.value, words_face(face)) > width_ ? 2 : 1;
+  }
+  // A text's or a row's height: its words, and the small icon's height only where it has a mark.
   int text_row(const Part &part, Font face) const {
-    const int words = ui::line_height(words_face(face));
+    const int words = ui::line_height(words_face(face)) * text_lines(part, face);
     return has_mark(part) ? std::max(words, ui::line_height(Font::ICON_SMALL)) : words;
   }
   int bar_thickness() const { return ui::px(ui::large() ? 10 : 6); }
@@ -312,7 +342,7 @@ class Drawing {
   bool has_mark(const Part &part) const { return part.icon || part.colour; }
   bool has_words(const Line &line) const {
     for (int i = line.first; i < line.first + line.count; ++i)
-      if (!parts_[i].label.empty() || has_mark(parts_[i])) return true;
+      if (parts_[i].label[0] || has_mark(parts_[i])) return true;
     return false;
   }
   // A mark in front of a value, when there is no row for the words above it: the tile's icon size where the value is
@@ -324,7 +354,7 @@ class Drawing {
     return part.icon ? ui::text_width(ui::icon(part.icon), icon_face) : part.colour ? dot_size() : 0;
   }
   int unit_width(const Part &part) const {
-    return part.unit.empty() ? 0 : ui::px(3) + ui::text_width(part.unit, Font::BODY);
+    return !part.unit[0] ? 0 : ui::px(3) + ui::text_width(part.unit, Font::BODY);
   }
 
   int line_height(const Line &line, Font face, bool labels) const {
@@ -336,7 +366,8 @@ class Drawing {
     int h = 0;
     for (int i = line.first; i < line.first + line.count; ++i) {
       switch (parts_[i].kind) {
-        case Kind::VALUE: h = std::max(h, words + ui::line_height(face)); break;
+        case Kind::VALUE:
+        case Kind::ROW: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
       }
@@ -345,10 +376,18 @@ class Drawing {
   }
 
   // Whether every value of `all` has the room of its column in `face`, whatever the height.
-  bool fits_across(const std::vector<Line> &all, Font face, bool labels) const {
+  bool fits_across(const Lines &all, Font face, bool labels) const {
+    const int column = column_width(columns(all));
     for (const Line &line : all) {
-      if (line.across) continue;
-      const int column = column_width(line.count);
+      if (line.across) {
+        // A row's value whole at the right, its label taking what is left.
+        const Part &part = parts_[line.first];
+        if (part.kind == Kind::ROW &&
+            (has_mark(part) ? mark_width(part, Font::ICON_SMALL) + ui::px(6) : 0) +
+                    ui::text_width(part.value, words_face(face)) + unit_width(part) > width_)
+          return false;
+        continue;
+      }
       for (int i = line.first; i < line.first + line.count; ++i) {
         const Part &part = parts_[i];
         if (part.kind == Kind::TEXT) {
@@ -365,7 +404,7 @@ class Drawing {
     return true;
   }
 
-  bool fits(const std::vector<Line> &all, Font face, bool head, bool labels) const {
+  bool fits(const Lines &all, Font face, bool head, bool labels) const {
     if (!fits_across(all, face, labels)) return false;
     int used = head ? ui::line_height(Font::TITLE) + gap() : 0;
     for (const Line &line : all) used += line_height(line, face, labels);
@@ -383,27 +422,27 @@ class Drawing {
       const int h = ui::line_height(Font::BODY);
       lv_obj_set_size(note_, width_, h);
       lv_obj_set_pos(note_, 0, (height_ - h) / 2);
-      ui::set_text(note_, note_text_);
+      ui::set_text(note_, roomy::plain(note_text_));
       show(note_, true);
       return;
     }
-    const std::vector<Line> arrangements[] = {side_by_side(), stacked()};
+    const Lines arrangements[] = {side_by_side(), stacked()};
     const bool named = !shown_name_.empty();
     struct Try { bool head, labels; };
     Font face = Font::BODY;
     Try chosen = {false, false};
-    const std::vector<Line> *lines = &arrangements[1];
-    bool found = false;
+    const Lines *lines = &arrangements[1];
+    bool found = false, whole_chosen = false;
     // A part whose label has no icon or colour to stand in for it keeps the row of labels, whatever it costs: without
     // it nothing would say what its number is.
     bool unmarked = false;
     for (const Part &part : parts_)
-      if (part.kind != Kind::TEXT && !part.label.empty() && !has_mark(part)) unmarked = true;
+      if (part.kind != Kind::TEXT && part.label[0] && !has_mark(part)) unmarked = true;
     // Labels before whole words: first with a text beside other parts whole, then with it cut short, as before.
     for (bool labelled : {unmarked, false}) {
       for (bool whole : {true, false}) {
         whole_texts_ = whole;
-        for (const std::vector<Line> &all : arrangements) {
+        for (const Lines &all : arrangements) {
           if (all.empty()) continue;
           for (bool head : {named, false}) {
             // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them
@@ -417,6 +456,7 @@ class Drawing {
                 chosen = {head, labelled || fits(all, f, head, true)};
                 lines = &all;
                 found = true;
+                whole_chosen = whole;
               }
               break;
             }
@@ -427,7 +467,8 @@ class Drawing {
       }
       if (found) break;
     }
-    whole_texts_ = true;
+    // What the lines below are measured with: the choice that fitted, else texts on one line.
+    whole_texts_ = whole_chosen;
     // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
     // show (below).
     if (!found)
@@ -442,7 +483,7 @@ class Drawing {
       const int h = ui::line_height(Font::TITLE);
       lv_obj_set_size(head_, width_, h);
       lv_obj_set_pos(head_, 0, 0);
-      ui::set_text(head_, shown_name_);
+      ui::set_text(head_, roomy::plain(shown_name_));
       show(head_, true);
       y = h + gap();
     }
@@ -453,10 +494,11 @@ class Drawing {
     const int between = n > 1 ? std::max(gap(), spare / (n + 1)) : 0;
     y += std::max(0, (spare - between * (n - 1)) / 2);
     // Where even the smallest face does not fit, the lines that fit whole, never one cut in half at the bottom.
+    const int cols = columns(*lines);
     for (const Line &line : *lines) {
       const int h = line_height(line, face, chosen.labels);
       if (!found && y + h > height_) break;
-      place(line, face, chosen.labels, y);
+      place(line, cols, face, chosen.labels, y);
       y += h + between;
     }
   }
@@ -483,13 +525,14 @@ class Drawing {
     return 0;
   }
 
-  // The mark and words beside it, centred on a row `h` high at (x, y), at most `room` wide.
+  // The mark and words beside it, centred on a row `h` high at (x, y), at most `room` wide and `lines` lines high (a
+  // label of several lines wraps at its width and ends the last in dots, as ui::text does).
   void place_words(Slot &s, const Part &part, int x, int y, int h, int room, Font words_face, lv_obj_t *words,
-                   const std::string &text) {
-    const int mark = place_mark(s, part, x, y, h, Font::ICON_SMALL);
+                   const std::string &text, int lines = 1) {
+    const int mark = place_mark(s, part, x, y, std::min(h, ui::line_height(words_face)), Font::ICON_SMALL);
     const int left = x + (mark ? mark + ui::px(6) : 0);
     if (!text.empty() && x + room - left > 0) {
-      const int wh = ui::line_height(words_face);
+      const int wh = ui::line_height(words_face) * lines;
       ui::set_font(words, words_face);
       ui::set_text(words, text);
       lv_obj_set_size(words, x + room - left, wh);
@@ -508,7 +551,7 @@ class Drawing {
     lv_obj_set_size(s.value, vw, vh);
     lv_obj_set_pos(s.value, x, y);
     show(s.value, true);
-    if (!part.unit.empty()) {
+    if (part.unit[0]) {
       const lv_font_t *big = ui::font(face), *small = ui::font(Font::BODY);
       const int uh = ui::line_height(Font::BODY);
       const int baseline = y + vh - (big ? big->base_line : 0);
@@ -537,13 +580,23 @@ class Drawing {
     show(s.fill, filled > 0);
   }
 
-  void place(const Line &line, Font face, bool labels, int y) {
+  void place(const Line &line, int cols, Font face, bool labels, int y) {
     const int h = line_height(line, face, labels);
     if (line.across) {
       const Part &part = parts_[line.first];
       Slot &s = slots_[line.first];
       if (part.kind == Kind::TEXT) {
-        place_words(s, part, 0, y, h, width_, words_face(face), s.value, part.value);
+        place_words(s, part, 0, y, h, width_, words_face(face), s.value, part.value, text_lines(part, face));
+        return;
+      }
+      if (part.kind == Kind::ROW) {
+        // A row of a table: its mark and label at the left, its value and unit at the right, all in the words' face,
+        // so the values of rows that follow each other stand in one column.
+        const Font words = words_face(face);
+        const int right = ui::text_width(part.value, words) + unit_width(part);
+        const int vh = ui::line_height(words);
+        place_value(s, part, words, width_ - right, y + (h - vh) / 2, right);
+        place_words(s, part, 0, y, h, std::max(0, width_ - right - ui::px(8)), words, s.label, part.label);
         return;
       }
       // A bar across the width: its words at the left, the value at the right, the bar under them.
@@ -555,7 +608,7 @@ class Drawing {
       place_bar(s, part, 0, y + row + ui::px(4), width_);
       return;
     }
-    const int column = column_width(line.count);
+    const int column = column_width(cols);
     const bool words = labels && has_words(line);
     for (int k = 0; k < line.count; ++k) {
       const Part &part = parts_[line.first + k];
@@ -583,10 +636,11 @@ class Drawing {
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
   bool flat_ = false, titled_ = true;
-  std::string name_, shown_name_, note_text_;
-  std::vector<Part> parts_;
-  std::vector<Line> fallback_;
-  mutable bool whole_texts_ = true;  // layout's choice while it searches (fits_across reads it)  // the arrangement of a tile where nothing fits, which `lines` may point to
+  // Kept in PSRAM (tessera::Text and tessera::List, plugin API 0.10): the memory inside the chip stays Wi-Fi's.
+  tessera::Text name_, shown_name_, note_text_;
+  tessera::List<Part> parts_;
+  Lines fallback_;  // the arrangement of a tile where nothing fits, which `lines` may point to
+  mutable bool whole_texts_ = true;  // texts whole: beside other parts only where they fit, across in two lines
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};
 };
@@ -605,12 +659,12 @@ class CardTile : public tessera::Tile {
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }
-  void on_tap() override { tessera::open_card(plugin_->plugin_id(), "detail", entity_, tile_); }
+  void on_tap() override { tessera::open_card(plugin_->plugin_id(), "detail", roomy::plain(entity_), tile_); }
 
  private:
   const tessera::Plugin *plugin_;
   Drawing drawing_;
-  std::string entity_;
+  tessera::Text entity_;
   int tile_ = -1;
 };
 

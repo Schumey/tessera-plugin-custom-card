@@ -5,8 +5,8 @@ beschreibt, gezeichnet vom Bildschirm in seinen eigenen Schriften und Farben. Da
 Tile, der Strom im Haus, was offen ist: alles, was ein Template sagen kann.
 
 Auf einem Tile, das eine Zeile hoch und zwei oder mehr Spalten breit ist, stehen die Teile nebeneinander, jeder mit
-Label und Icon darüber und einem Balken unter dem Wert. Jedes andere Tile stapelt sie: Werte nebeneinander, ein Balken
-oder eine Textzeile über die ganze Breite. Die Werte bekommen die größte Schrift, die neben dem Namen des Tiles passt,
+Label und Icon darüber und einem Balken unter dem Wert. Jedes andere Tile stapelt sie: Werte nebeneinander, ein Balken,
+eine Textzeile oder eine Tabellenzeile über die ganze Breite. Die Werte bekommen die größte Schrift, die neben dem Namen des Tiles passt,
 auf einem großen Tile die großen Ziffern der Klimakarte, wenn alle Werte Zahlen sind; die Labels darüber bleiben nur,
 wo sie die Werte nichts kosten, sonst steht jedes Icon vor seiner Zahl.
 Ein Label ohne Icon und ohne Farbe bleibt immer.
@@ -50,7 +50,9 @@ Label, die Farbe, das Icon und bei einem Balken sein kleinster und größter Wer
 - `value`: eine Zahl mit Einheit, etwa `value|21,4|°C|Temperatur||thermometer`.
 - `bar`: eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), etwa
   `bar|820|ppm|CO2|yellow||400|2000`.
-- `text`: eine Textzeile, etwa `text|Tür offen||||door-open`.
+- `text`: eine Textzeile, etwa `text|Tür offen||||door-open`. Eine lange nimmt zwei Zeilen, wo die Karte Platz hat.
+- `row`: eine Zeile einer Tabelle, das Label links und der Wert rechts, etwa `row|20,8|°C|Küche`. Aufeinanderfolgende
+  Zeilen stehen als Tabelle, ihre Werte in einer Spalte: eine Liste von Räumen, Akkus oder Abfahrten.
 
 Eine Farbe ist `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras
 eigenen Tiles markiert sie einen Teil und färbt nie seine Worte: Sie färbt das Icon (einen Punkt, wo der Teil keins hat)

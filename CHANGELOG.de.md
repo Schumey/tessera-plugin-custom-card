@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.6.0
+- Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die
+  Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.
+- Eine lange Textzeile nimmt zwei Zeilen, wo die Karte Platz hat, statt mit Punkten zu enden.
+- Die Werte einer kürzeren Reihe stehen unter den Spalten der Reihe darüber, statt sich über die Breite zu verteilen.
+- Die Karte hält ihre Teile im PSRAM des Bildschirms, so bleibt der Speicher frei, den das WLAN braucht.
+- Braucht Tessera 0.4.88 oder neuer.
+
 ## 0.5.0 - 2026-10-14
 - Große Zahlen auf großen Tiles: Wo sie passen und alle Werte Zahlen sind, bekommen die Werte die großen Ziffern
   der Klimakarte von Tessera. Ein Wert mit einem Wort darin behält seine bisherige Schrift.

@@ -1,6 +1,6 @@
 # What tools/preview.py of the tessera-plugins repository shows (its docs/PREVIEW.md): a room's climate with icons,
 # colours and a bar, two counts with a share, a card whose value is a word,
-# eight rooms in two rows of four, and eight rooms as lines of text. Never put a secret here.
+# eight rooms in two rows of four, and eight rooms as a table. Never put a secret here.
 tiles:
   - tile: card
     name: Living room
@@ -18,7 +18,7 @@ tiles:
     sizes: [2x2, 3x2, 4x2, 4x4]
   - tile: card
     name: House
-    entity: sensor.house_card
+    entity: sensor.house_table
     sizes: [1x2, 2x2, 3x2, 3x3]
 
 states:
@@ -56,18 +56,18 @@ states:
         - "value|20,8|°C|Kids"
         - "value|16,3|°C|Hall"
         - "value|12,7|°C|Cellar|blue"
-  sensor.house_card:
+  sensor.house_table:
     state: "17.8"
     attributes:
       elements:
-        - "text|Entrance: 20,8 °C"
-        - "text|Kitchen: 21,8 °C"
-        - "text|Bedroom: 20,8 °C"
-        - "text|Bath: 20,5 °C"
-        - "text|Dining: 20,7 °C"
-        - "text|Living: 20,4 °C"
-        - "text|Attic: 22,7 °C"
-        - "text|Outside: 17,8 °C"
+        - "row|20,8|°C|Entrance"
+        - "row|21,8|°C|Kitchen"
+        - "row|20,8|°C|Bedroom"
+        - "row|20,5|°C|Bath"
+        - "row|20,7|°C|Dining"
+        - "row|20,4|°C|Living"
+        - "row|22,7|°C|Attic"
+        - "row|17,8|°C|Outside|blue|thermometer"
 
 cards:
   - { card: detail, entity: sensor.living_room_card }

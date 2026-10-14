@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+- A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the
+  values of a list (rooms, batteries, departures) stand under each other.
+- A long line of words takes two lines where the card has the room, instead of ending in dots.
+- Values of a shorter row stand under the columns of the row above it instead of spreading over the width.
+- The card keeps its parts in the screen's PSRAM, so the memory Wi-Fi needs stays free.
+- Needs Tessera 0.4.88 or later.
+
 ## 0.5.0 - 2026-10-14
 - Large numbers on a large tile: where they fit and every value is a number, the values take the large digits of
   Tessera's climate card. A value with a word in it keeps the face it had.
