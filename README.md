@@ -43,15 +43,19 @@ template:
 ## The parts
 
 Each part is one text, its fields split by `|`, in this order: the kind, the value, the unit, the label, the colour,
-the icon, and for a bar its lowest and highest value. Fields at the end may be left out.
+the icon, and for a bar or an arc its lowest and highest value. Fields at the end may be left out.
 
 - `value`: a number with its unit, such as `value|21.4|°C|Temperature||thermometer`.
 - `bar`: a number with a bar under it, from its lowest to its highest value (0 and 100 when left out), such as
   `bar|820|ppm|CO2|yellow||400|2000`.
+- `arc`: a number with a ring before it, three quarters of a circle open at the bottom, filled from its lowest to its
+  highest value (0 and 100 when left out) with its icon in the middle, such as
+  `arc|13|°C|Auto|orange|thermometer|5|30`. Its label stands above the number at its right. It stands beside values
+  and other arcs, as a value does.
 - `text`: a line of words, such as `text|Door open||||door-open`.
 
 A colour is `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles it
-marks a part and never paints its words: it colours the icon (a dot where the part has none) and the bar. The colours
+marks a part and never paints its words: it colours the icon (a dot where the part has none), the bar and the arc. The colours
 that say how good a level is are Tessera's own, readable in light and dark: `green` good, `yellow` and `orange`
 moderate, `red` bad, `blue` the accent. An icon is a name from the editor's icon picker, with or without `mdi:`.
 

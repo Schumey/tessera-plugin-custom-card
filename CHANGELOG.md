@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 - 2026-10-17
+- A new part, `arc`: a value with a ring before it, three quarters of a circle open at the bottom, filled from its
+  lowest to its highest value in the part's colour, with its icon in the middle. Written as a bar:
+  `arc|13|°C|Auto|orange|thermometer|5|30`.
+- Each tile of the card costs the screen a little more memory for the rings.
+
 ## 0.5.0 - 2026-10-14
 - Large numbers on a large tile: where they fit and every value is a number, the values take the large digits of
   Tessera's climate card. A value with a word in it keeps the face it had.

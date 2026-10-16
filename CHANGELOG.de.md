@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.6.0 - 2026-10-17
+- Ein neuer Teil, `arc`: ein Wert mit einem Ring davor, drei Viertel eines Kreises, unten offen, vom kleinsten bis zum
+  größten Wert in der Farbe des Teils gefüllt, mit seinem Icon in der Mitte. Geschrieben wie ein Balken:
+  `arc|13|°C|Auto|orange|thermometer|5|30`.
+- Jedes Tile der Karte kostet den Bildschirm etwas mehr Speicher für die Ringe.
+
 ## 0.5.0 - 2026-10-14
 - Große Zahlen auf großen Tiles: Wo sie passen und alle Werte Zahlen sind, bekommen die Werte die großen Ziffern
   der Klimakarte von Tessera. Ein Wert mit einem Wort darin behält seine bisherige Schrift.
