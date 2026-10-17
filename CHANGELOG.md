@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 - 2026-10-17
+- Two options in the tile's inspector: **Show the name** (on) hides the tile's name over its parts when off, for more
+  room; **Values in their colour** (off) paints each number in its part's colour, readable in light and dark, so a red
+  95 % reads as one.
+- A ring without an icon keeps its label where the tile has room for it: its colour says how good a value is, not what
+  it is.
+
 ## 0.6.1 - 2026-10-17
 - An arc's value and unit stand in the middle of its ring, and the ring is larger for it.
 - An arc's icon and label stand under its ring, so rings side by side keep their labels where the tile has the height

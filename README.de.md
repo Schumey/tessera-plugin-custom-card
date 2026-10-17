@@ -72,7 +72,10 @@ Editors, mit oder ohne `mdi:`.
 - Die Schrift eines Werts richtet sich nach seiner Form, nicht nach den Ziffern, so behält das Tile seine Größe, wenn
   sich ein Wert ändert.
 - Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` zurück ist.
-- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile.
+- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat zwei eigene
+  Optionen: **Namen zeigen** (an) für den Namen über den Teilen, und **Werte in ihrer Farbe** (aus), um auch jede Zahl
+  in der Farbe ihres Teils zu zeigen, hell und dunkel lesbar. Die Karte, die ein Tippen öffnet, zeigt ihre Zahlen
+  weiter in der normalen Schriftfarbe.
 
 ## So funktioniert es
 

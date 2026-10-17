@@ -156,13 +156,16 @@ class Drawing {
  public:
   explicit Drawing(const tessera::Plugin *plugin) : plugin_(plugin) {}
 
-  // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead).
-  void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled) {
+  // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead, and a tile may turn it
+  // off). `coloured`: a value takes its part's colour, not only its mark.
+  void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled,
+              bool coloured) {
     width_ = width;
     height_ = height;
     flat_ = flat;
     name_ = name;
     titled_ = titled;
+    coloured_ = coloured;
     head_ = ui::label(parent, Font::TITLE, theme::INK);
     note_ = ui::label(parent, Font::BODY, theme::MUTED);
     lv_obj_set_style_text_align(note_, LV_TEXT_ALIGN_CENTER, 0);
@@ -250,8 +253,10 @@ class Drawing {
         ui::set_fill(s.dot, tone, theme::ACCENT);
         ui::set_fill(s.fill, tone, theme::ACCENT);
         lv_obj_set_style_arc_color(s.arc, ui::tone_color(tone, theme::ACCENT), LV_PART_INDICATOR);
+        if (coloured_) lv_obj_set_style_text_color(s.value, theme::rgb(readable(toned)), 0);
       } else if (own) {
         lv_obj_set_style_text_color(s.icon, theme::rgb(icon_colour(own)), 0);
+        if (coloured_) lv_obj_set_style_text_color(s.value, theme::rgb(icon_colour(own)), 0);
         lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
         lv_obj_set_style_arc_color(s.arc, theme::rgb(own), LV_PART_INDICATOR);
@@ -460,10 +465,12 @@ class Drawing {
     const std::vector<Line> *lines = &arrangements[1];
     bool found = false;
     // A part whose label has no icon or colour to stand in for it keeps the row of labels, whatever it costs: without
-    // it nothing would say what its number is.
+    // it nothing would say what its number is. A ring's colour says how good it is, not what it is: a ring keeps its
+    // label unless it has an icon.
     bool unmarked = false;
     for (const Part &part : parts_)
-      if (part.kind != Kind::TEXT && !part.label.empty() && !has_mark(part)) unmarked = true;
+      if (part.kind != Kind::TEXT && !part.label.empty() && !(part.kind == Kind::ARC ? part.icon : has_mark(part)))
+        unmarked = true;
     // Rings first; where no ring fits (a tile too low for one), the arcs stand as plain values with their mark before
     // them, so the numbers still show.
     for (bool plain : {false, true}) {
@@ -689,7 +696,7 @@ class Drawing {
 
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
-  bool flat_ = false, titled_ = true;
+  bool flat_ = false, titled_ = true, coloured_ = false;
   std::string name_, shown_name_, note_text_;
   std::vector<Part> parts_;
   std::vector<Line> fallback_;
@@ -709,7 +716,9 @@ class CardTile : public tessera::Tile {
     tile_ = c.tile;
     // A tile one row high and two columns or more puts its parts side by side, as the departures plugin turns into a
     // list on two columns.
-    drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "", true);
+    // Its options: the name over the parts, and the values in their parts' colours.
+    drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "",
+                    c.options["show_name"] | true, c.options["coloured_values"] | false);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }
@@ -729,7 +738,7 @@ class DetailCard : public tessera::Card {
   explicit DetailCard(const tessera::Plugin *plugin) : drawing_(plugin) {}
 
   void open(const tessera::CardContext &c) override {
-    drawing_.create(c.parent, c.width, c.height, false, "", false);
+    drawing_.create(c.parent, c.width, c.height, false, "", false, false);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }

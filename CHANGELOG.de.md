@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.7.0 - 2026-10-17
+- Zwei Optionen im Inspector des Tiles: **Namen zeigen** (an) blendet ausgeschaltet den Namen über den Teilen aus, für
+  mehr Platz; **Werte in ihrer Farbe** (aus) färbt jede Zahl in der Farbe ihres Teils, hell und dunkel lesbar, so dass
+  eine rote 95 % auch rot dasteht.
+- Ein Ring ohne Icon behält sein Label, wo das Tile Platz dafür hat: Seine Farbe sagt, wie gut ein Wert ist, nicht was
+  er ist.
+
 ## 0.6.1 - 2026-10-17
 - Wert und Einheit eines Rings stehen in seiner Mitte, und der Ring ist dafür größer.
 - Icon und Label eines Rings stehen unter dem Ring. So behalten Ringe nebeneinander ihre Labels, wo das Tile die Höhe
