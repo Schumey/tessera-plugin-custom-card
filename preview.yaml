@@ -1,10 +1,14 @@
 # What tools/preview.py of the tessera-plugins repository shows (its docs/PREVIEW.md): a room's climate as two arcs, a
-# room's climate with icons, colours and a bar, two counts with a share, a card whose value is a word,
+# computer's load as three arcs in a row, a room's climate with icons, colours and a bar, two counts with a share, a card whose value is a word,
 # eight rooms in two rows of four, and eight rooms as lines of text. Never put a secret here.
 tiles:
   - tile: card
     name: Bedroom
     entity: sensor.bedroom_card
+  - tile: card
+    name: Computer
+    entity: sensor.computer_card
+    sizes: [2x1, 2x2, 4x2]
   - tile: card
     name: Living room
     entity: sensor.living_room_card
@@ -32,6 +36,13 @@ states:
       elements:
         - "arc|13|°C|Auto|orange|thermometer|5|30"
         - "arc|58|%|Humidity|green|water-percent|0|100"
+  sensor.computer_card:
+    state: "5"
+    attributes:
+      elements:
+        - "arc|5|%|CPU|green"
+        - "arc|1|%|GPU|green"
+        - "arc|40|%|RAM|green"
   sensor.living_room_card:
     state: "823"
     attributes:

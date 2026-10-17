@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 - 2026-10-17
+- An arc's value and unit stand in the middle of its ring, and the ring is larger for it.
+- An arc's icon and label stand under its ring, so rings side by side keep their labels where the tile has the height
+  for them, instead of losing them for the width. The rings of one row are all as large as its largest.
+- Where a tile is too low for a ring, its arcs show as plain values, with their icon or colour before the number,
+  instead of an empty tile.
+
 ## 0.6.0 - 2026-10-17
 - A new part, `arc`: a value with a ring before it, three quarters of a circle open at the bottom, filled from its
   lowest to its highest value in the part's colour, with its icon in the middle. Written as a bar:

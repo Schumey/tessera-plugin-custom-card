@@ -64,8 +64,8 @@ static uint32_t icon_colour(uint32_t colour) { return readable(theme::icon(colou
 static constexpr int MAX_PARTS = 8;
 static constexpr int MAX_IN_ROW = 4;
 
-// ARC: a value with a ring open at the bottom before it (three quarters of a circle), filled from min to max, the
-// part's icon in its middle.
+// ARC: a value in the middle of a ring open at the bottom (three quarters of a circle), filled from min to max, the
+// part's icon and label under it.
 enum class Kind : uint8_t { VALUE, BAR, ARC, TEXT };
 
 struct Part {
@@ -335,14 +335,27 @@ class Drawing {
   int gap() const { return ui::px(ui::large() ? 8 : 4); }
   int column_gap() const { return ui::px(ui::large() ? 16 : 8); }
   int column_width(int count) const { return (width_ - (count - 1) * column_gap()) / count; }
-  int arc_thickness() const { return ui::px(ui::large() ? 7 : 5); }
-  // An arc is as tall as the words and the value beside it, and never smaller than its icon inside the ring.
-  int arc_size(int text_h) const {
-    return std::max(text_h, ui::line_height(Font::ICON_SMALL) + 2 * (arc_thickness() + ui::px(4)));
+  int arc_thickness() const { return ui::px(ui::large() ? 8 : 6); }
+  // An arc holds its value and unit in the middle of the ring: the ring is as wide as the circle around them (the
+  // value's shape, so it keeps its size when a digit changes, and its digits about three quarters of its line high),
+  // and never smaller than a key. Its words go under it, so they cost the line height only, never the width a row of
+  // rings needs.
+  int arc_size(const Part &part, Font face) const {
+    const float w = ui::text_width(shape(part.value), face) + unit_width(part);
+    const float g = 0.75f * ui::line_height(face);
+    const int inner = (int) std::ceil(std::sqrt(w * w + g * g)) + 2 * ui::px(4);
+    return std::max(inner + 2 * arc_thickness(), ui::px(48));
   }
-  // The words and the value beside an arc, at its right.
-  int arc_text_x(int d) const { return d + ui::px(8); }
+  // The rings of one line are all as large as its largest, so their labels stand on one row.
+  int arc_size(const Line &line, Font face) const {
+    int d = 0;
+    for (int i = line.first; i < line.first + line.count; ++i)
+      if (parts_[i].kind == Kind::ARC) d = std::max(d, arc_size(parts_[i], face));
+    return d;
+  }
 
+  // An arc drawn as a ring, not as a plain value (layout's choice while it searches).
+  bool ring(const Part &part) const { return part.kind == Kind::ARC && !plain_arcs_; }
   // A part's mark: its icon, or a dot in its colour where it has no icon, or nothing.
   bool has_mark(const Part &part) const { return part.icon || part.colour; }
   bool has_words(const Line &line) const {
@@ -373,7 +386,9 @@ class Drawing {
       switch (parts_[i].kind) {
         case Kind::VALUE: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
-        case Kind::ARC: h = std::max(h, arc_size(words + ui::line_height(face))); break;
+        case Kind::ARC:
+          h = std::max(h, plain_arcs_ ? words + ui::line_height(face) : arc_size(line, face) + words);
+          break;
         default: h = std::max(h, text_row(parts_[i], face));
       }
     }
@@ -394,11 +409,9 @@ class Drawing {
             return false;
           continue;
         }
-        if (part.kind == Kind::ARC) {
-          // Its mark is in the ring: the ring, then the value.
-          const int words = labels && has_words(line) ? words_row() : 0;
-          if (arc_text_x(arc_size(words + ui::line_height(face))) + ui::text_width(shape(part.value), face) +
-                  unit_width(part) > column)
+        if (ring(part)) {
+          // Its value is in the ring and its words under it: the ring alone.
+          if (arc_size(line, face) > column)
             return false;
           continue;
         }
@@ -434,7 +447,9 @@ class Drawing {
     // An arc takes room beside its value: where arcs are, the values two to a row and one also compete for the largest
     // face, so a narrow tile stacks its rings instead of shrinking them all into one row.
     std::vector<std::vector<Line>> arrangements = {side_by_side(), stacked()};
-    if (std::any_of(parts_.begin(), parts_.end(), [](const Part &part) { return part.kind == Kind::ARC; })) {
+    const bool arcs =
+        std::any_of(parts_.begin(), parts_.end(), [](const Part &part) { return part.kind == Kind::ARC; });
+    if (arcs) {
       arrangements.push_back(stacked(2));
       arrangements.push_back(stacked(1));
     }
@@ -449,33 +464,40 @@ class Drawing {
     bool unmarked = false;
     for (const Part &part : parts_)
       if (part.kind != Kind::TEXT && !part.label.empty() && !has_mark(part)) unmarked = true;
-    // Labels before whole words: first with a text beside other parts whole, then with it cut short, as before.
-    for (bool labelled : {unmarked, false}) {
-      for (bool whole : {true, false}) {
-        whole_texts_ = whole;
-        for (const std::vector<Line> &all : arrangements) {
-          if (all.empty()) continue;
-          for (bool head : {named, false}) {
-            // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them
-            // all, and only where every value is digits it holds).
-            const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
-            for (Font f : every) {
-              if (f == Font::DIGITS && !digits_hold_values()) continue;
-              if (!fits(all, f, head, labelled)) continue;
-              if (!found || rank(f) < rank(face)) {
-                face = f;
-                chosen = {head, labelled || fits(all, f, head, true)};
-                lines = &all;
-                found = true;
+    // Rings first; where no ring fits (a tile too low for one), the arcs stand as plain values with their mark before
+    // them, so the numbers still show.
+    for (bool plain : {false, true}) {
+      plain_arcs_ = plain;
+      // Labels before whole words: first with a text beside other parts whole, then with it cut short, as before.
+      for (bool labelled : {unmarked, false}) {
+        for (bool whole : {true, false}) {
+          whole_texts_ = whole;
+          for (const std::vector<Line> &all : arrangements) {
+            if (all.empty()) continue;
+            for (bool head : {named, false}) {
+              // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them
+              // all, and only where every value is digits it holds).
+              const Font every[] = {Font::DIGITS, Font::VALUE,      Font::HEADLINE,
+                                    Font::TITLE,  Font::BODY_LARGE, Font::BODY};
+              for (Font f : every) {
+                if (f == Font::DIGITS && !digits_hold_values()) continue;
+                if (!fits(all, f, head, labelled)) continue;
+                if (!found || rank(f) < rank(face)) {
+                  face = f;
+                  chosen = {head, labelled || fits(all, f, head, true)};
+                  lines = &all;
+                  found = true;
+                }
+                break;
               }
-              break;
+              if (found) break;
             }
-            if (found) break;
           }
+          if (found) break;
         }
         if (found) break;
       }
-      if (found) break;
+      if (found || !arcs) break;
     }
     whole_texts_ = true;
     // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
@@ -570,7 +592,7 @@ class Drawing {
     }
   }
 
-  // An arc `d` wide at (x, y), filled from min to max, the part's icon in the middle of the ring.
+  // An arc `d` wide at (x, y), filled from min to max.
   void place_arc(Slot &s, const Part &part, int x, int y, int d) {
     const int thick = arc_thickness();
     lv_obj_set_size(s.arc, d, d);
@@ -579,7 +601,6 @@ class Drawing {
     lv_obj_set_style_arc_width(s.arc, thick, LV_PART_INDICATOR);
     lv_arc_set_value(s.arc, (int32_t) std::lround(share_of(part) * 1000));
     show(s.arc, true);
-    if (part.icon) place_mark(s, part, x + (d - mark_width(part, Font::ICON_SMALL)) / 2, y, d, Font::ICON_SMALL);
   }
 
   // A bar `width` wide at (x, y), filled from min to max.
@@ -626,21 +647,30 @@ class Drawing {
         place_words(s, part, x, y + (h - th) / 2, th, column, words_face(face), s.value, part.value);
         continue;
       }
-      if (part.kind == Kind::ARC) {
-        // The ring at the left, its words over the value at its right, both centred on the line.
-        const int text_h = (words ? words_row() : 0) + ui::line_height(face);
-        const int d = arc_size(text_h);
-        place_arc(s, part, x, y + (h - d) / 2, d);
-        const int tx = x + arc_text_x(d), ty = y + (h - text_h) / 2;
-        if (words && !part.label.empty()) {
-          const int lh = ui::line_height(Font::BODY);
-          ui::set_font(s.label, Font::BODY);
-          ui::set_text(s.label, part.label);
-          lv_obj_set_size(s.label, std::max(1, x + column - tx), lh);
-          lv_obj_set_pos(s.label, tx, ty + (words_row() - lh) / 2);
-          show(s.label, true);
+      if (ring(part)) {
+        // The ring in the middle of its column with the value and unit in its middle, its icon and label under it;
+        // centred on the line. The ring's colour marks it, so it needs no dot.
+        const int d = arc_size(line, face), vh = ui::line_height(face);
+        const int top = y + (h - d - (words ? words_row() : 0)) / 2;
+        const int cx = x + column / 2;
+        place_arc(s, part, cx - d / 2, top, d);
+        const int vw = ui::text_width(part.value, face) + unit_width(part);
+        place_value(s, part, face, cx - vw / 2, top + (d - vh) / 2, vw);
+        if (words) {
+          const int mark = part.icon ? mark_width(part, Font::ICON_SMALL) : 0;
+          const int space = mark && !part.label.empty() ? ui::px(6) : 0;
+          const int row = std::min(column, mark + space + (part.label.empty() ? 0 : ui::text_width(part.label, Font::BODY)));
+          const int lx = cx - row / 2;
+          if (mark) place_mark(s, part, lx, top + d, words_row(), Font::ICON_SMALL);
+          if (!part.label.empty() && row - mark - space > 0) {
+            const int lh = ui::line_height(Font::BODY);
+            ui::set_font(s.label, Font::BODY);
+            ui::set_text(s.label, part.label);
+            lv_obj_set_size(s.label, row - mark - space, lh);
+            lv_obj_set_pos(s.label, lx + mark + space, top + d + (words_row() - lh) / 2);
+            show(s.label, true);
+          }
         }
-        place_value(s, part, face, tx, ty + (words ? words_row() : 0), x + column - tx);
         continue;
       }
       int vy = y;
@@ -663,6 +693,7 @@ class Drawing {
   std::string name_, shown_name_, note_text_;
   std::vector<Part> parts_;
   std::vector<Line> fallback_;
+  bool plain_arcs_ = false;  // where no ring fits, the arcs as plain values
   mutable bool whole_texts_ = true;  // layout's choice while it searches (fits_across reads it)  // the arrangement of a tile where nothing fits, which `lines` may point to
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};

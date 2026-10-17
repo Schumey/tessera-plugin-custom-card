@@ -50,9 +50,9 @@ Label, die Farbe, das Icon und bei einem Balken oder Ring sein kleinster und gr�
 - `value`: eine Zahl mit Einheit, etwa `value|21,4|°C|Temperatur||thermometer`.
 - `bar`: eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), etwa
   `bar|820|ppm|CO2|yellow||400|2000`.
-- `arc`: eine Zahl mit einem Ring davor, drei Viertel eines Kreises, unten offen, vom kleinsten bis zum größten Wert
-  gefüllt (ohne Angabe 0 und 100), mit dem Icon in der Mitte, etwa `arc|13|°C|Auto|orange|thermometer|5|30`. Das Label
-  steht rechts über der Zahl. Ein Ring steht neben Werten und anderen Ringen, wie ein Wert.
+- `arc`: eine Zahl in der Mitte eines Rings, drei Viertel eines Kreises, unten offen, vom kleinsten bis zum größten
+  Wert gefüllt (ohne Angabe 0 und 100), etwa `arc|13|°C|Auto|orange|thermometer|5|30`. Icon und Label stehen unter dem
+  Ring, wo das Tile die Höhe dafür hat. Ein Ring steht neben Werten und anderen Ringen, wie ein Wert.
 - `text`: eine Textzeile, etwa `text|Tür offen||||door-open`.
 
 Eine Farbe ist `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras
