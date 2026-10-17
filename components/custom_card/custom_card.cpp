@@ -354,9 +354,14 @@ class Drawing {
   // Larger faces first: DIGITS, then Font's own order.
   static int rank(Font f) { return f == Font::DIGITS ? -1 : static_cast<int>(f); }
   // Whether DIGITS has every character of every value shown large (a word, a letter or a sign it lacks keeps VALUE).
-  bool digits_hold_values() const {
-    for (const Part &part : parts_)
-      if (part.kind != Kind::TEXT && !ui::covers(part.value, Font::DIGITS)) return false;
+  // Only the values of an arrangement's lines of values count: a row, a bar or a text across the width stands in the
+  // words' face, so a time on a row ("15:25") never keeps the counts above it small.
+  bool digits_hold_values(const Lines &all) const {
+    for (const Line &line : all) {
+      if (line.across) continue;
+      for (int i = line.first; i < line.first + line.count; ++i)
+        if (parts_[i].kind != Kind::TEXT && !ui::covers(parts_[i].value, Font::DIGITS)) return false;
+    }
     return true;
   }
   int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
@@ -528,7 +533,7 @@ class Drawing {
           for (bool head : {named, false}) {
             const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
             for (Font f : every) {
-              if (f == Font::DIGITS && !digits_hold_values()) continue;
+              if (f == Font::DIGITS && !digits_hold_values(all)) continue;
               if (!fits(all, f, head, labelled)) continue;
               if (!pick.found || rank(f) < rank(pick.face))
                 pick = {true, f, {head, labelled || fits(all, f, head, true)}, whole, index};

@@ -8,6 +8,7 @@ tiles:
   - tile: card
     name: Entrance
     entity: sensor.entrance_card
+    sizes: [1x1, 2x1, 2x2, 4x2]
   - tile: card
     name: Front door
     entity: sensor.front_door_card
@@ -37,6 +38,7 @@ states:
         - "value|8.704||Scanned"
         - "value|12.499||Valid"
         - "bar|70|%|Share|blue||0|100"
+        - "row|15:25||Race day"
   sensor.front_door_card:
     state: "open"
     attributes:

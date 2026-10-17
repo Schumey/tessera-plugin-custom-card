@@ -13,6 +13,8 @@
   Liniennummer in einer Abfahrtsliste (`row|4|min|Hauptbahnhof|blue|#16`).
 - Die Werte einer kürzeren Reihe stehen unter den Spalten der Reihe darüber, statt sich über die Breite zu verteilen.
 - Die Karte hält ihre Teile im PSRAM des Bildschirms, so bleibt der Speicher frei, den das WLAN braucht.
+- Werte bekommen die großen Ziffern auch neben einer Zeile mit Uhrzeit oder Worten (`row|15:25||Renntag`): Es zählen nur
+  die Werte, die groß stehen, so sind zwei Zahlen über einem Anteil und einer Uhrzeit so groß, wie die Karte es zulässt.
 - Braucht Tessera 0.4.88 oder neuer.
 
 ## 0.5.0 - 2026-10-14

@@ -12,6 +12,8 @@
 - A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
   list of departures (`row|4|min|Main station|blue|#16`).
 - Values of a shorter row stand under the columns of the row above it instead of spreading over the width.
+- Values take the large digits also beside a row with a time or words (`row|15:25||Race day`): only the values that
+  stand large count, so two counts over a share and a time are as large as the card lets them be.
 - The card keeps its parts in the screen's PSRAM, so the memory Wi-Fi needs stays free.
 - Needs Tessera 0.4.88 or later.
 
