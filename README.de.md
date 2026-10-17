@@ -1,6 +1,6 @@
 # Eigene Karte
 
-Ein Tile, das du selbst zusammenstellst: Werte, Balken, Textzeilen und Tabellen, die ein Template-Sensor in Home
+Ein Tile, das du selbst zusammenstellst: Werte, Ringe, Balken, Textzeilen und Tabellen, die ein Template-Sensor in Home
 Assistant beschreibt, gezeichnet vom Bildschirm in seinen eigenen Schriften und Farben. Das Raumklima eines Zimmers auf
 einem Tile, eine Liste der Räume, die Akkus, die schwach werden, die nächsten Abfahrten an deiner Haltestelle: alles,
 was ein Template sagen kann.
@@ -184,8 +184,8 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
 - **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras eigenen
   Tiles markiert sie einen Teil: Sie färbt das Icon (einen Punkt, wo der Teil keins hat), den Balken, den Ring und ein
   Kästchen, die Schrift bleibt in den Farben des Looks. Die Option **Werte in ihrer Farbe** der Kachel färbt auch die
-  Zahlen. `green` gut, `yellow` und `orange` mäßig, `red` schlecht und `blue` die Akzentfarbe
-  sind Tesseras eigene Farben, hell und dunkel gut lesbar.
+  Zahlen. `green` gut, `yellow` und `orange` mäßig, `red` schlecht und `blue` die Akzentfarbe sind Tesseras eigene
+  Farben, hell und dunkel gut lesbar.
 - **Icon**: ein Name aus der Icon-Auswahl des Editors, mit oder ohne `mdi:`.
 - **Kästchen**: Ein Icon-Feld, das mit `#` beginnt, zeigt den Text danach in einem Kästchen in der Farbe des Teils (ohne
   Farbe in der Akzentfarbe), etwa die Nummer einer Linie: `row|4|min|Hauptbahnhof|blue|#16`. Höchstens 8 Zeichen.

@@ -1,8 +1,8 @@
 # Custom card
 
-A tile you put together yourself: values, bars, lines of words and tables that a template sensor in Home Assistant
-describes, drawn by the screen in its own fonts and colours. A room's climate on one tile, a list of rooms, the
-batteries that run low, the next departures from your stop: whatever a template can say.
+A tile you put together yourself: values, rings, bars, lines of words and tables that a template sensor in Home
+Assistant describes, drawn by the screen in its own fonts and colours. A room's climate on one tile, a list of rooms,
+the batteries that run low, the next departures from your stop: whatever a template can say.
 
 The card lays itself out for the tile it stands on. On a tile one row high and two columns or more the parts stand side
 by side; any other tile stacks them: values side by side, a bar, a line of words or a row of a table across the width.
@@ -179,8 +179,9 @@ a ring its lowest and highest value. Fields at the end may be left out; a field 
 
 - **Colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles
   it marks a part: it colours the icon (a dot where the part has none), the bar, the ring and a badge, and the words
-  stay in the look's own colours. The tile's option **Values in their colour** paints the numbers too. `green` good, `yellow` and `orange` moderate, `red` bad and `blue` the accent are Tessera's own colours,
-  readable in light and dark.
+  stay in the look's own colours. The tile's option **Values in their colour** paints the numbers too. `green` good,
+  `yellow` and `orange` moderate, `red` bad and `blue` the accent are Tessera's own colours, readable in light and
+  dark.
 - **Icon**: a name from the editor's icon picker, with or without `mdi:`.
 - **Badge**: an icon field that starts with `#` shows the words after it in a box of the part's colour (the accent
   without one), such as a line's number: `row|4|min|Main station|blue|#16`. At most 8 characters.
