@@ -48,10 +48,9 @@ the icon, and for a bar or an arc its lowest and highest value. Fields at the en
 - `value`: a number with its unit, such as `value|21.4|°C|Temperature||thermometer`.
 - `bar`: a number with a bar under it, from its lowest to its highest value (0 and 100 when left out), such as
   `bar|820|ppm|CO2|yellow||400|2000`.
-- `arc`: a number with a ring before it, three quarters of a circle open at the bottom, filled from its lowest to its
-  highest value (0 and 100 when left out) with its icon in the middle, such as
-  `arc|13|°C|Auto|orange|thermometer|5|30`. Its label stands above the number at its right. It stands beside values
-  and other arcs, as a value does.
+- `arc`: a number in the middle of a ring, three quarters of a circle open at the bottom, filled from its lowest to its
+  highest value (0 and 100 when left out), such as `arc|13|°C|Auto|orange|thermometer|5|30`. Its icon and label stand
+  under the ring, where the tile has the height for them. It stands beside values and other arcs, as a value does.
 - `text`: a line of words, such as `text|Door open||||door-open`.
 
 A colour is `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles it

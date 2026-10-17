@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.6.1 - 2026-10-17
+- Wert und Einheit eines Rings stehen in seiner Mitte, und der Ring ist dafür größer.
+- Icon und Label eines Rings stehen unter dem Ring. So behalten Ringe nebeneinander ihre Labels, wo das Tile die Höhe
+  dafür hat, statt sie für die Breite zu verlieren. Die Ringe einer Reihe sind alle so groß wie der größte.
+- Wo ein Tile zu niedrig für einen Ring ist, zeigt es die Ringe als einfache Werte, mit Icon oder Farbe vor der Zahl,
+  statt leer zu bleiben.
+
 ## 0.6.0 - 2026-10-17
 - Ein neuer Teil, `arc`: ein Wert mit einem Ring davor, drei Viertel eines Kreises, unten offen, vom kleinsten bis zum
   größten Wert in der Farbe des Teils gefüllt, mit seinem Icon in der Mitte. Geschrieben wie ein Balken:
