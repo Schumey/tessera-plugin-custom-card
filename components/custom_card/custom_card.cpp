@@ -19,10 +19,11 @@ namespace ui = tessera::ui;
 //
 //   value|<value>|<unit>|<label>|<colour>|<icon>
 //   bar|<value>|<unit>|<label>|<colour>|<icon>|<min>|<max>
+//   arc|<value>|<unit>|<label>|<colour>|<icon>|<min>|<max>
 //   text|<words>|||<colour>|<icon>
 //
 // Fields at the end may be left out. A colour is one of the key colours of theme.h (red, orange, yellow, green, mint,
-// blue, purple, pink, gray): it paints the part's icon (a dot where it has none) and its bar, never its words. The
+// blue, purple, pink, gray): it paints the part's icon (a dot where it has none), its bar and its arc, never its words. The
 // colours that mean something are Tessera's tones (plugin API 0.9), readable on the card in both looks: green is GOOD,
 // yellow and orange BUSY, red ALERT, blue ACCENT; the others keep their key colour. An icon is a name of Tessera's set
 // (icons.h).
@@ -63,7 +64,9 @@ static uint32_t icon_colour(uint32_t colour) { return readable(theme::icon(colou
 static constexpr int MAX_PARTS = 8;
 static constexpr int MAX_IN_ROW = 4;
 
-enum class Kind : uint8_t { VALUE, BAR, TEXT };
+// ARC: a value with a ring open at the bottom before it (three quarters of a circle), filled from min to max, the
+// part's icon in its middle.
+enum class Kind : uint8_t { VALUE, BAR, ARC, TEXT };
 
 struct Part {
   Kind kind = Kind::VALUE;
@@ -118,6 +121,7 @@ static bool parse(const std::string &line, Part *part) {
   auto at = [&](size_t i) { return i < f.size() ? f[i] : std::string(); };
   if (f[0] == "value") part->kind = Kind::VALUE;
   else if (f[0] == "bar") part->kind = Kind::BAR;
+  else if (f[0] == "arc") part->kind = Kind::ARC;
   else if (f[0] == "text") part->kind = Kind::TEXT;
   else return false;
   part->value = at(1);
@@ -130,6 +134,13 @@ static bool parse(const std::string &line, Part *part) {
   if (number_of(at(6), &n)) part->min = n;
   if (number_of(at(7), &n)) part->max = n;
   return true;
+}
+
+// How much of a bar or an arc is filled, 0 to 1: nothing for a value that is no number.
+static float share_of(const Part &part) {
+  float value;
+  if (!number_of(part.value, &value) || part.max <= part.min) return 0;
+  return std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
 }
 
 // ---- The tile ----
@@ -164,6 +175,18 @@ class Drawing {
       s.unit = ui::label(parent, Font::BODY, theme::MUTED);
       s.track = ui::block(parent, theme::TRACK);
       s.fill = ui::block(s.track, theme::ACCENT);
+      // A ring that only shows: no knob, no touch (a tap is the tile's), open at the bottom, a tenth of a percent fine.
+      s.arc = lv_arc_create(parent);
+      lv_obj_remove_style(s.arc, nullptr, LV_PART_KNOB);
+      lv_obj_remove_flag(s.arc, LV_OBJ_FLAG_CLICKABLE);
+      lv_obj_set_style_pad_all(s.arc, 0, 0);
+      lv_obj_set_style_bg_opa(s.arc, LV_OPA_TRANSP, 0);
+      lv_obj_set_style_border_width(s.arc, 0, 0);
+      lv_obj_set_style_arc_rounded(s.arc, true, LV_PART_MAIN);
+      lv_obj_set_style_arc_rounded(s.arc, true, LV_PART_INDICATOR);
+      lv_arc_set_rotation(s.arc, 135);
+      lv_arc_set_bg_angles(s.arc, 0, 270);
+      lv_arc_set_range(s.arc, 0, 1000);
     }
     hide_all();
   }
@@ -219,26 +242,30 @@ class Drawing {
       ui::set_color(s.unit, theme::MUTED);
       ui::set_color(s.value, theme::INK);
       lv_obj_set_style_bg_color(s.track, ui::color(theme::TRACK), 0);
+      lv_obj_set_style_arc_color(s.arc, ui::color(theme::TRACK), LV_PART_MAIN);
       if (tone != Tone::NORMAL) {
         // The tone's colour; on the icon darker still where it would not read on the card (BUSY's amber on white).
         const uint32_t toned = lv_color_to_u32(ui::tone_color(tone, theme::MUTED));  // 0xFFRRGGBB: the alpha byte is ignored
         lv_obj_set_style_text_color(s.icon, theme::rgb(readable(toned)), 0);
         ui::set_fill(s.dot, tone, theme::ACCENT);
         ui::set_fill(s.fill, tone, theme::ACCENT);
+        lv_obj_set_style_arc_color(s.arc, ui::tone_color(tone, theme::ACCENT), LV_PART_INDICATOR);
       } else if (own) {
         lv_obj_set_style_text_color(s.icon, theme::rgb(icon_colour(own)), 0);
         lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
+        lv_obj_set_style_arc_color(s.arc, theme::rgb(own), LV_PART_INDICATOR);
       } else {
         ui::set_color(s.icon, theme::MUTED);
         lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
+        lv_obj_set_style_arc_color(s.arc, ui::color(theme::ACCENT), LV_PART_INDICATOR);
       }
     }
   }
 
  private:
   struct Slot {
-    lv_obj_t *icon{}, *dot{}, *label{}, *value{}, *unit{}, *track{}, *fill{};
+    lv_obj_t *icon{}, *dot{}, *label{}, *value{}, *unit{}, *track{}, *fill{}, *arc{};
   };
   // Parts side by side in columns, or a bar or a text alone across the width (`across`: its words left, its value
   // right, the bar under them).
@@ -256,14 +283,15 @@ class Drawing {
     show(head_, false);
     show(note_, false);
     for (Slot &s : slots_)
-      for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track}) show(obj, false);
+      for (lv_obj_t *obj : {s.icon, s.dot, s.label, s.value, s.unit, s.track, s.arc}) show(obj, false);
   }
 
-  // Stacked: values that follow each other side by side (at most `in_row`), a bar and a text alone across the width.
+  // Stacked: values and arcs that follow each other side by side (at most `in_row`), a bar and a text alone across the
+  // width.
   std::vector<Line> stacked(int in_row = MAX_IN_ROW) const {
     std::vector<Line> out;
     for (int i = 0; i < (int) parts_.size(); ++i) {
-      const bool value = parts_[i].kind == Kind::VALUE;
+      const bool value = parts_[i].kind == Kind::VALUE || parts_[i].kind == Kind::ARC;
       if (value && !out.empty() && !out.back().across && out.back().count < in_row)
         ++out.back().count;
       else
@@ -307,6 +335,13 @@ class Drawing {
   int gap() const { return ui::px(ui::large() ? 8 : 4); }
   int column_gap() const { return ui::px(ui::large() ? 16 : 8); }
   int column_width(int count) const { return (width_ - (count - 1) * column_gap()) / count; }
+  int arc_thickness() const { return ui::px(ui::large() ? 7 : 5); }
+  // An arc is as tall as the words and the value beside it, and never smaller than its icon inside the ring.
+  int arc_size(int text_h) const {
+    return std::max(text_h, ui::line_height(Font::ICON_SMALL) + 2 * (arc_thickness() + ui::px(4)));
+  }
+  // The words and the value beside an arc, at its right.
+  int arc_text_x(int d) const { return d + ui::px(8); }
 
   // A part's mark: its icon, or a dot in its colour where it has no icon, or nothing.
   bool has_mark(const Part &part) const { return part.icon || part.colour; }
@@ -338,6 +373,7 @@ class Drawing {
       switch (parts_[i].kind) {
         case Kind::VALUE: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
+        case Kind::ARC: h = std::max(h, arc_size(words + ui::line_height(face))); break;
         default: h = std::max(h, text_row(parts_[i], face));
       }
     }
@@ -355,6 +391,14 @@ class Drawing {
           // A text beside other parts (a flat tile) has its words whole where another arrangement allows it.
           if (whole_texts_ && line.count > 1 && mark_width(part, Font::ICON_SMALL) + (has_mark(part) ? ui::px(6) : 0) +
                                         ui::text_width(part.value, words_face(face)) > column)
+            return false;
+          continue;
+        }
+        if (part.kind == Kind::ARC) {
+          // Its mark is in the ring: the ring, then the value.
+          const int words = labels && has_words(line) ? words_row() : 0;
+          if (arc_text_x(arc_size(words + ui::line_height(face))) + ui::text_width(shape(part.value), face) +
+                  unit_width(part) > column)
             return false;
           continue;
         }
@@ -387,7 +431,13 @@ class Drawing {
       show(note_, true);
       return;
     }
-    const std::vector<Line> arrangements[] = {side_by_side(), stacked()};
+    // An arc takes room beside its value: where arcs are, the values two to a row and one also compete for the largest
+    // face, so a narrow tile stacks its rings instead of shrinking them all into one row.
+    std::vector<std::vector<Line>> arrangements = {side_by_side(), stacked()};
+    if (std::any_of(parts_.begin(), parts_.end(), [](const Part &part) { return part.kind == Kind::ARC; })) {
+      arrangements.push_back(stacked(2));
+      arrangements.push_back(stacked(1));
+    }
     const bool named = !shown_name_.empty();
     struct Try { bool head, labels; };
     Font face = Font::BODY;
@@ -520,6 +570,18 @@ class Drawing {
     }
   }
 
+  // An arc `d` wide at (x, y), filled from min to max, the part's icon in the middle of the ring.
+  void place_arc(Slot &s, const Part &part, int x, int y, int d) {
+    const int thick = arc_thickness();
+    lv_obj_set_size(s.arc, d, d);
+    lv_obj_set_pos(s.arc, x, y);
+    lv_obj_set_style_arc_width(s.arc, thick, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(s.arc, thick, LV_PART_INDICATOR);
+    lv_arc_set_value(s.arc, (int32_t) std::lround(share_of(part) * 1000));
+    show(s.arc, true);
+    if (part.icon) place_mark(s, part, x + (d - mark_width(part, Font::ICON_SMALL)) / 2, y, d, Font::ICON_SMALL);
+  }
+
   // A bar `width` wide at (x, y), filled from min to max.
   void place_bar(Slot &s, const Part &part, int x, int y, int width) {
     const int thick = bar_thickness();
@@ -528,9 +590,7 @@ class Drawing {
     lv_obj_set_style_radius(s.track, thick / 2, 0);
     lv_obj_set_style_radius(s.fill, thick / 2, 0);
     show(s.track, true);
-    float value, share = 0;
-    if (number_of(part.value, &value) && part.max > part.min)
-      share = std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
+    const float share = share_of(part);
     const int filled = share > 0 ? std::max(thick, (int) std::lround(share * width)) : 0;
     lv_obj_set_size(s.fill, filled, thick);
     lv_obj_set_pos(s.fill, 0, 0);
@@ -564,6 +624,23 @@ class Drawing {
       if (part.kind == Kind::TEXT) {
         const int th = text_row(part, face);
         place_words(s, part, x, y + (h - th) / 2, th, column, words_face(face), s.value, part.value);
+        continue;
+      }
+      if (part.kind == Kind::ARC) {
+        // The ring at the left, its words over the value at its right, both centred on the line.
+        const int text_h = (words ? words_row() : 0) + ui::line_height(face);
+        const int d = arc_size(text_h);
+        place_arc(s, part, x, y + (h - d) / 2, d);
+        const int tx = x + arc_text_x(d), ty = y + (h - text_h) / 2;
+        if (words && !part.label.empty()) {
+          const int lh = ui::line_height(Font::BODY);
+          ui::set_font(s.label, Font::BODY);
+          ui::set_text(s.label, part.label);
+          lv_obj_set_size(s.label, std::max(1, x + column - tx), lh);
+          lv_obj_set_pos(s.label, tx, ty + (words_row() - lh) / 2);
+          show(s.label, true);
+        }
+        place_value(s, part, face, tx, ty + (words ? words_row() : 0), x + column - tx);
         continue;
       }
       int vy = y;
