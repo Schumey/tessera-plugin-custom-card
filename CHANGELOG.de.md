@@ -1,6 +1,6 @@
 # Änderungen
 
-## 0.6.0
+## 0.6.0 - 2026-10-17
 - Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die
   Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.
 - Eine lange Textzeile nimmt zwei Zeilen, wo die Karte Platz hat, statt mit Punkten zu enden.
@@ -8,9 +8,8 @@
 - Ein Ring: `ring`-Teile stehen als Ringe, mehrere nebeneinander (die Luft eines Raums, die Akkus im Haus), der Wert
   groß in der Mitte seines Rings, Icon und Label darunter, alle Ringe einer Reihe so groß wie der größte (Schumeys
   Entwurf, Pull Request #2). Ein Ring ohne Icon behält sein Label, denn seine Farbe sagt, wie gut ein Wert ist, nicht,
-  was er ist. Auf einer Karte mit Werten ist ein Ring
-  kompakt: Er steht zwischen ihnen, so hoch wie ihre Zahlen, mit seiner Zahl innen (ein Anteil neben zwei Zählungen).
-  Auf einem zu kleinen Tile stehen ihre Zahlen als Werte.
+  was er ist. Auf einer Karte mit Werten ist ein Ring kompakt: Er steht zwischen ihnen, so hoch wie ihre Zahlen, mit
+  seiner Zahl innen (ein Anteil neben zwei Zählungen). Auf einem zu kleinen Tile stehen ihre Zahlen als Werte.
 - Ein Kästchen: Ein Icon-Feld, das mit `#` beginnt, zeigt seinen Text in einem Kästchen in der Farbe des Teils, wie die
   Liniennummer in einer Abfahrtsliste (`row|4|min|Hauptbahnhof|blue|#16`).
 - Die Werte einer kürzeren Reihe stehen unter den Spalten der Reihe darüber, statt sich über die Breite zu verteilen.

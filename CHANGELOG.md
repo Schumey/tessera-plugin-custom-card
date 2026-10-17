@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0
+## 0.6.0 - 2026-10-17
 - A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the
   values of a list (rooms, batteries, departures) stand under each other.
 - A long line of words takes two lines where the card has the room, instead of ending in dots.
@@ -8,9 +8,8 @@
 - A ring: `ring` parts stand as rings, several side by side (the air of a room, the batteries of the house), the value
   large in the middle of its ring and the icon and label under it, all rings of a row as large as the largest
   (Schumey's design, pull request #2). A ring without an icon keeps its label, as its colour says how good it is, not
-  what it is. On a card with values a ring is
-  compact: it stands among them as tall as their numbers, with its number inside (a share beside two counts). On a
-  tile too small for them, their numbers stand as values.
+  what it is. On a card with values a ring is compact: it stands among them as tall as their numbers, with its number
+  inside (a share beside two counts). On a tile too small for them, their numbers stand as values.
 - A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
   list of departures (`row|4|min|Main station|blue|#16`).
 - Values of a shorter row stand under the columns of the row above it instead of spreading over the width.
