@@ -45,16 +45,19 @@ template:
 ## Die Teile
 
 Jeder Teil ist ein Text, die Felder getrennt durch `|`, in dieser Reihenfolge: die Art, der Wert, die Einheit, das
-Label, die Farbe, das Icon und bei einem Balken sein kleinster und größter Wert. Felder am Ende dürfen fehlen.
+Label, die Farbe, das Icon und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende dürfen fehlen.
 
 - `value`: eine Zahl mit Einheit, etwa `value|21,4|°C|Temperatur||thermometer`.
 - `bar`: eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), etwa
   `bar|820|ppm|CO2|yellow||400|2000`.
+- `arc`: eine Zahl mit einem Ring davor, drei Viertel eines Kreises, unten offen, vom kleinsten bis zum größten Wert
+  gefüllt (ohne Angabe 0 und 100), mit dem Icon in der Mitte, etwa `arc|13|°C|Auto|orange|thermometer|5|30`. Das Label
+  steht rechts über der Zahl. Ein Ring steht neben Werten und anderen Ringen, wie ein Wert.
 - `text`: eine Textzeile, etwa `text|Tür offen||||door-open`.
 
 Eine Farbe ist `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras
-eigenen Tiles markiert sie einen Teil und färbt nie seine Worte: Sie färbt das Icon (einen Punkt, wo der Teil keins hat)
-und den Balken. Die Farben, die sagen, wie gut ein Wert ist, sind Tesseras eigene, hell und dunkel lesbar: `green`
+eigenen Tiles markiert sie einen Teil und färbt nie seine Worte: Sie färbt das Icon (einen Punkt, wo der Teil keins hat),
+den Balken und den Ring. Die Farben, die sagen, wie gut ein Wert ist, sind Tesseras eigene, hell und dunkel lesbar: `green`
 gut, `yellow` und `orange` mäßig, `red` schlecht, `blue` die Akzentfarbe. Ein Icon ist ein Name aus der Icon-Auswahl des
 Editors, mit oder ohne `mdi:`.
 

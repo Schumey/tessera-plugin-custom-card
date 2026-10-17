@@ -10,7 +10,7 @@
   },
   "app": {
     "name": "Eigene Karte",
-    "summary": "Eine Karte aus Werten, Balken und Text, die ein Template-Sensor in Home Assistant beschreibt.",
+    "summary": "Eine Karte aus Werten, Ringen, Balken und Text, die ein Template-Sensor in Home Assistant beschreibt.",
     "tile_name": "Eigene Karte",
     "tile_example": "21,4 °C, 48 %, CO2 820 ppm",
     "card_name": "Eigene Karte, groß"
