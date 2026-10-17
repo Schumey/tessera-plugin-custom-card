@@ -10,7 +10,7 @@
   },
   "app": {
     "name": "Custom card",
-    "summary": "A card of values, bars and words that a template sensor in Home Assistant describes.",
+    "summary": "A card of values, rings, bars, tables and words that a template sensor in Home Assistant describes.",
     "tile_name": "Custom card",
     "tile_example": "21.4 °C, 48 %, CO2 820 ppm",
     "card_name": "Custom card, large",
