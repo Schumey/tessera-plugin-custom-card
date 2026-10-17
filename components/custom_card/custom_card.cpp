@@ -452,7 +452,10 @@ class Drawing {
         case Kind::VALUE:
         case Kind::ROW: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::RING:
-          h = std::max(h, meter(parts_[i]) ? ring_dia(line, face) + words : words + ui::line_height(face));
+          // A ring keeps its icon and label under it whatever the labels of the values do: it has nowhere else to put a
+          // mark, and without them nothing says what its number is.
+          h = std::max(h, meter(parts_[i]) ? ring_dia(line, face) + (has_words(line) ? words_row() : 0)
+                                           : words + ui::line_height(face));
           break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
@@ -828,7 +831,7 @@ class Drawing {
       Slot &s = slots_[line.first + k];
       const int x = k * (column + column_gap());
       if (meter(part)) {
-        place_ring(s, part, line, x, y, column, h, face, words);
+        place_ring(s, part, line, x, y, column, h, face, has_words(line));
         continue;
       }
       if (part.kind == Kind::TEXT) {

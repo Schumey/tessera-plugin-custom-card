@@ -7,8 +7,8 @@
 - Rows and lines of words take a larger face where the card has room for it, never larger than its values.
 - A ring: `ring` parts stand as rings, several side by side (the air of a room, the batteries of the house), the value
   large in the middle of its ring and the icon and label under it, all rings of a row as large as the largest
-  (Schumey's design, pull request #2). A ring without an icon keeps its label, as its colour says how good it is, not
-  what it is. On a card with values a ring is compact: it stands among them as tall as their numbers, with its number
+  (Schumey's design, pull request #2). A ring always keeps its icon and label under it, even where the values give
+  theirs up for a larger face: its colour says how good a value is, not what it is. On a card with values a ring is compact: it stands among them as tall as their numbers, with its number
   inside (a share beside two counts). On a tile too small for them, their numbers stand as values.
 - A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
   list of departures (`row|4|min|Main station|blue|#16`).
