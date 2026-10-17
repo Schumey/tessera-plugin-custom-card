@@ -13,6 +13,10 @@
     "summary": "Eine Karte aus Werten, Balken und Text, die ein Template-Sensor in Home Assistant beschreibt.",
     "tile_name": "Eigene Karte",
     "tile_example": "21,4 °C, 48 %, CO2 820 ppm",
-    "card_name": "Eigene Karte, groß"
+    "card_name": "Eigene Karte, groß",
+    "show_name": "Namen zeigen",
+    "show_name_hint": "Der Name der Kachel über den Teilen. Aus: mehr Platz für die Teile.",
+    "coloured_values": "Werte in ihrer Farbe",
+    "coloured_values_hint": "Die Zahlen nehmen die Farbe ihres Teils an, nicht nur Icon, Balken und Ring."
   }
 }

@@ -48,7 +48,7 @@ template:
 
 ### The air of a room as rings
 
-Rings in the look of Tessera's meter, side by side: each filled from its lowest to its highest value.
+Rings side by side, each filled from its lowest to its highest value, its value large in its middle.
 
 ```yaml
 template:
@@ -175,11 +175,11 @@ a ring its lowest and highest value. Fields at the end may be left out; a field 
 | `bar` | A number with a bar under it, from its lowest to its highest value (0 and 100 when left out). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | A line of words; a long one takes two lines where the card has room. | `text\|Door open\|\|\|\|door-open` |
 | `row` | A row of a table: its label at the left, its value at the right. Rows that follow each other stand as a table. | `row\|20.8\|°C\|Kitchen` |
-| `ring` | A ring filled from its lowest to its highest value (0 and 100 when left out), the icon inside, the value under it. Rings that follow each other stand side by side; on a card with values a ring stands among them, compact, its number inside; where they do not fit, the number stands as a value. | `ring\|46\|%\|Humidity\|green\|water-percent\|0\|100` |
+| `ring` | A ring filled from its lowest to its highest value (0 and 100 when left out), the value in its middle, the icon and the label under it. Rings that follow each other stand side by side, all as large as the largest; on a card with values a ring stands among them, compact, its number inside; where they do not fit, the number stands as a value. | `ring\|46\|%\|Humidity\|green\|water-percent\|0\|100` |
 
 - **Colour**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` or `gray`. As on Tessera's own tiles
-  it marks a part and never paints its words: it colours the icon (a dot where the part has none), the bar and a
-  badge. `green` good, `yellow` and `orange` moderate, `red` bad and `blue` the accent are Tessera's own colours,
+  it marks a part: it colours the icon (a dot where the part has none), the bar, the ring and a badge, and the words
+  stay in the look's own colours. The tile's option **Values in their colour** paints the numbers too. `green` good, `yellow` and `orange` moderate, `red` bad and `blue` the accent are Tessera's own colours,
   readable in light and dark.
 - **Icon**: a name from the editor's icon picker, with or without `mdi:`.
 - **Badge**: an icon field that starts with `#` shows the words after it in a box of the part's colour (the accent
@@ -197,7 +197,10 @@ a ring its lowest and highest value. Fields at the end may be left out; a field 
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
 - When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
 - A plugin tile cannot take a whole page; any other size of the grid is fine.
-- The tile's background colour is set in the editor, as for every tile.
+- The tile's background colour is set in the editor, as for every tile. Its inspector has two options of its own:
+  **Show the name** (on) for the tile's name over the parts (off gives the parts its room), and **Values in their
+  colour** (off) to paint each number in its part's colour as well, readable in light and dark. The card a tap opens
+  keeps its numbers in the look's ink.
 
 ## How it works
 

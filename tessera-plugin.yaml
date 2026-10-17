@@ -29,6 +29,11 @@ tiles:
     has_attributes: [elements]
     example: tile_example
     preview: { title: "{name}", value: "{state}" }
+    # The name over the parts, and the values in the colours of their parts (only their marks when off). Both keep
+    # today's look by default (Schumey, pull request #2).
+    options:
+      - { id: show_name, kind: toggle, label: show_name, hint: show_name_hint, default: true }
+      - { id: coloured_values, kind: toggle, label: coloured_values, hint: coloured_values_hint, default: false }
 
 # A tap on the tile opens its parts large over the page, with their labels.
 cards:

@@ -163,13 +163,16 @@ class Drawing {
  public:
   explicit Drawing(const tessera::Plugin *plugin) : plugin_(plugin) {}
 
-  // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead).
-  void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled) {
+  // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead, and a tile may turn it
+  // off). `coloured`: a value takes its part's colour too, not only its mark.
+  void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled,
+              bool coloured) {
     width_ = width;
     height_ = height;
     flat_ = flat;
     name_ = roomy::text(name);
     titled_ = titled;
+    coloured_ = coloured;
     head_ = ui::label(parent, Font::TITLE, theme::INK);
     note_ = ui::label(parent, Font::BODY, theme::MUTED);
     lv_obj_set_style_text_align(note_, LV_TEXT_ALIGN_CENTER, 0);
@@ -240,7 +243,8 @@ class Drawing {
     paint();
   }
 
-  // The colours: words and numbers follow the look; a part's own colour paints only its mark and its bar.
+  // The colours: words and numbers follow the look; a part's own colour paints its mark, its bar and its ring, and with
+  // the tile's option (coloured_) its value too, made readable on the card as its icon is.
   void paint() {
     ui::set_color(head_, theme::INK);
     ui::set_color(note_, theme::MUTED);
@@ -256,26 +260,23 @@ class Drawing {
         // The tone's colour; on the icon darker still where it would not read on the card (BUSY's amber on white).
         const uint32_t toned = lv_color_to_u32(ui::tone_color(tone, theme::MUTED));  // 0xFFRRGGBB: the alpha byte is ignored
         lv_obj_set_style_text_color(s.icon, theme::rgb(readable(toned)), 0);
+        if (coloured_ && parts_[i].kind != Kind::TEXT) lv_obj_set_style_text_color(s.value, theme::rgb(readable(toned)), 0);
         ui::set_fill(s.dot, tone, theme::ACCENT);
         ui::set_fill(s.fill, tone, theme::ACCENT);
       } else if (own) {
         lv_obj_set_style_text_color(s.icon, theme::rgb(icon_colour(own)), 0);
+        if (coloured_ && parts_[i].kind != Kind::TEXT) lv_obj_set_style_text_color(s.value, theme::rgb(icon_colour(own)), 0);
         lv_obj_set_style_bg_color(s.dot, theme::rgb(own), 0);
         lv_obj_set_style_bg_color(s.fill, theme::rgb(own), 0);
       } else {
         ui::set_color(s.icon, theme::MUTED);
         lv_obj_set_style_bg_color(s.fill, ui::color(theme::ACCENT), 0);
       }
-      // A ring: its arc on the track in the part's colour (the accent without one), its icon in that colour on a pale
-      // disc of it.
+      // A ring: its arc on the track in the part's colour (the accent without one).
       const uint32_t mark = tone != Tone::NORMAL ? lv_color_to_u32(ui::tone_color(tone, theme::ACCENT))  // alpha ignored
                             : own ? own : theme::hex(theme::ACCENT);
       lv_obj_set_style_arc_color(s.arc, ui::color(theme::TRACK), LV_PART_MAIN);
       lv_obj_set_style_arc_color(s.arc, theme::rgb(mark), LV_PART_INDICATOR);
-      if (i < parts_.size() && meter(parts_[i])) {
-        lv_obj_set_style_bg_color(s.dot, theme::rgb(theme::mix(mark, theme::hex(theme::CARD), 70)), 0);
-        lv_obj_set_style_text_color(s.badge, theme::rgb(readable(mark)), 0);
-      }
       if (i < parts_.size() && parts_[i].badge[0]) {
         // A badge: its box in the part's colour or the accent, its words in whichever of the look's own colours
         // reads best on it.
@@ -393,15 +394,22 @@ class Drawing {
     const int inside = dia - 2 * compact_thick(dia) - ui::px(4);
     return ui::text_width(part.value, Font::BODY_LARGE) + unit <= inside ? Font::BODY_LARGE : Font::BODY;
   }
-  // A ring's size follows the face the values take, so a ring shrinks with them on a smaller tile: its diameter, its
-  // stroke as the meter's (a fourteenth), the face of its value under the open bottom and its height with the label.
-  static int ring_dia(Font face) {
-    return std::max(ui::mm(10), std::min(ui::mm(26), ui::line_height(face) * 26 / 10));
-  }
+  // A ring of a card of rings holds its value and unit in its middle, in the values' face, with its icon and label
+  // under it (Schumey's design, pull request #2): the ring is the circle around the value's shape (so it keeps its size
+  // when a digit ticks) and never smaller than a key, its stroke the meter's (a fourteenth). The rings of one line are as
+  // large as its largest, so their labels stand on one row.
   static int ring_thick(int dia) { return std::max(ui::px(4), dia / 14); }
-  static Font ring_value_face(Font face) { return face == Font::BODY ? Font::BODY : Font::BODY_LARGE; }
-  static int ring_height(Font face) {
-    return ring_dia(face) * 85 / 100 + ui::line_height(ring_value_face(face)) + ui::line_height(Font::BODY);
+  int ring_dia(const Part &part, Font face) const {
+    const float w = static_cast<float>(ui::text_width(shape(part.value), face) + unit_width(part));
+    const float g = 0.75f * static_cast<float>(ui::line_height(face));
+    const int inner = static_cast<int>(std::ceil(std::sqrt(w * w + g * g))) + 2 * ui::px(4);
+    return std::max(ui::px(48), inner + 2 * std::max(ui::px(4), inner / 12));
+  }
+  int ring_dia(const Line &line, Font face) const {
+    int dia = 0;
+    for (int i = line.first; i < line.first + line.count; ++i)
+      if (meter(parts_[i])) dia = std::max(dia, ring_dia(parts_[i], face));
+    return dia;
   }
   int bar_thickness() const { return ui::px(ui::large() ? 10 : 6); }
   int dot_size() const { return ui::px(ui::large() ? 12 : 8); }
@@ -444,7 +452,7 @@ class Drawing {
         case Kind::VALUE:
         case Kind::ROW: h = std::max(h, words + ui::line_height(face)); break;
         case Kind::RING:
-          h = std::max(h, meter(parts_[i]) ? ring_height(face) : words + ui::line_height(face));
+          h = std::max(h, meter(parts_[i]) ? ring_dia(line, face) + words : words + ui::line_height(face));
           break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
@@ -479,9 +487,8 @@ class Drawing {
           continue;
         }
         if (meter(part)) {
-          if (column < ring_dia(face) ||
-              ui::text_width(shape(part.value), ring_value_face(face)) + unit_width(part) > column)
-            return false;
+          // Its value is in the ring and its words under it: the ring alone.
+          if (ring_dia(line, face) > column) return false;
           continue;
         }
         if (part.kind == Kind::TEXT) {
@@ -568,7 +575,9 @@ class Drawing {
     // it nothing would say what its number is.
     bool unmarked = false, rings = false, values = false;
     for (const Part &part : parts_) {
-      if (part.kind != Kind::TEXT && part.label[0] && !has_mark(part)) unmarked = true;
+      // A ring's colour says how good it is, not what it is: a ring keeps its label unless it has an icon (Schumey).
+      if (part.kind != Kind::TEXT && part.label[0] && !(part.kind == Kind::RING ? part.icon != 0 : has_mark(part)))
+        unmarked = true;
       if (part.kind == Kind::RING) rings = true;
       if (part.kind == Kind::VALUE || part.kind == Kind::BAR) values = true;
     }
@@ -715,12 +724,15 @@ class Drawing {
     }
   }
 
-  // A ring in a column at (x, y), as Tessera's meter draws one: the arc filled from min to max, the icon in a pale disc
-  // of its colour inside, the value with its unit under the open bottom, and the label under that.
-  void place_ring(Slot &s, const Part &part, int x, int y, int column, Font face) {
-    const int dia = ring_dia(face), thick = ring_thick(dia), cx = x + column / 2;
+  // A ring in a column at (x, y) of a line `h` high: the arc filled from min to max, open at the bottom as Tessera's
+  // meter's, the value and unit in its middle, and under it the icon and the label (`words`), all centred on the line.
+  // The ring's colour marks it, so it needs no dot.
+  void place_ring(Slot &s, const Part &part, const Line &line, int x, int y, int column, int h, Font face, bool words) {
+    const int dia = ring_dia(line, face), thick = ring_thick(dia), cx = x + column / 2;
+    const int row_h = words ? words_row() : 0;
+    const int top = y + std::max(0, (h - dia - row_h) / 2);
     lv_obj_set_size(s.arc, dia, dia);
-    lv_obj_set_pos(s.arc, cx - dia / 2, y);
+    lv_obj_set_pos(s.arc, cx - dia / 2, top);
     lv_obj_set_style_arc_width(s.arc, thick, LV_PART_MAIN);
     lv_obj_set_style_arc_width(s.arc, thick, LV_PART_INDICATOR);
     float value, share = 0;
@@ -728,29 +740,20 @@ class Drawing {
       share = std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
     lv_arc_set_value(s.arc, static_cast<int>(std::lround(share * 1000)));
     show(s.arc, true);
-    if (part.icon) {
-      const int disc = dia * 36 / 100, ih = ui::line_height(Font::ICON_SMALL);
-      lv_obj_set_size(s.dot, disc, disc);
-      lv_obj_set_style_radius(s.dot, LV_RADIUS_CIRCLE, 0);
-      lv_obj_set_pos(s.dot, cx - disc / 2, y + dia / 2 - disc / 2);
-      show(s.dot, true);
-      ui::set_font(s.badge, Font::ICON_SMALL);
-      ui::set_text(s.badge, ui::icon(part.icon));
-      lv_obj_set_size(s.badge, disc, ih);
-      lv_obj_center(s.badge);
-      show(s.badge, true);
-    }
-    const Font vf = ring_value_face(face);
-    const int vw = std::min(column, ui::text_width(part.value, vf) + unit_width(part));
-    const int vy = y + dia * 85 / 100 - ui::line_height(vf) / 2;
-    place_value(s, part, vf, cx - vw / 2, vy, column);
-    if (part.label[0]) {
+    const int vw = std::min(dia - 2 * thick, ui::text_width(part.value, face) + unit_width(part));
+    place_value(s, part, face, cx - vw / 2, top + (dia - ui::line_height(face)) / 2, vw);
+    if (!words) return;
+    const int mark = part.icon ? ui::text_width(ui::icon(part.icon), Font::ICON_SMALL) : 0;
+    const int space = mark && part.label[0] ? ui::px(6) : 0;
+    const int row = std::min(column, mark + space + (part.label[0] ? ui::text_width(part.label, Font::BODY) : 0));
+    const int lx = cx - row / 2, ly = top + dia;
+    if (mark) place_mark(s, part, lx, ly, row_h, Font::ICON_SMALL);
+    if (part.label[0] && row - mark - space > 0) {
       const int lh = ui::line_height(Font::BODY);
       ui::set_font(s.label, Font::BODY);
       ui::set_text(s.label, part.label);
-      lv_obj_set_size(s.label, column, lh);
-      lv_obj_set_style_text_align(s.label, LV_TEXT_ALIGN_CENTER, 0);
-      lv_obj_set_pos(s.label, x, vy + ui::line_height(vf));
+      lv_obj_set_size(s.label, row - mark - space, lh);
+      lv_obj_set_pos(s.label, lx + mark + space, ly + (row_h - lh) / 2);
       show(s.label, true);
     }
   }
@@ -825,7 +828,7 @@ class Drawing {
       Slot &s = slots_[line.first + k];
       const int x = k * (column + column_gap());
       if (meter(part)) {
-        place_ring(s, part, x, y, column, face);
+        place_ring(s, part, line, x, y, column, h, face, words);
         continue;
       }
       if (part.kind == Kind::TEXT) {
@@ -853,7 +856,7 @@ class Drawing {
 
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
-  bool flat_ = false, titled_ = true;
+  bool flat_ = false, titled_ = true, coloured_ = false;
   // Kept in PSRAM (tessera::Text and tessera::List, plugin API 0.10): the memory inside the chip stays Wi-Fi's.
   tessera::Text name_, shown_name_, note_text_;
   tessera::List<Part> parts_;
@@ -878,7 +881,9 @@ class CardTile : public tessera::Tile {
     tile_ = c.tile;
     // A tile one row high and two columns or more puts its parts side by side, as the departures plugin turns into a
     // list on two columns.
-    drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "", true);
+    // Its options (Schumey, pull request #2): the name over the parts, and the values in their parts' colours.
+    drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "",
+                    c.options["show_name"] | true, c.options["coloured_values"] | false);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }
@@ -898,7 +903,7 @@ class DetailCard : public tessera::Card {
   explicit DetailCard(const tessera::Plugin *plugin) : drawing_(plugin) {}
 
   void open(const tessera::CardContext &c) override {
-    drawing_.create(c.parent, c.width, c.height, false, "", false);
+    drawing_.create(c.parent, c.width, c.height, false, "", false, false);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }

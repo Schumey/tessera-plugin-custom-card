@@ -51,7 +51,7 @@ template:
 
 ### Die Luft eines Raums als Ringe
 
-Ringe im Look von Tesseras Meter, nebeneinander: jeder gefüllt vom kleinsten bis zum größten Wert.
+Ringe nebeneinander, jeder gefüllt vom kleinsten bis zum größten Wert, sein Wert groß in seiner Mitte.
 
 ```yaml
 template:
@@ -179,11 +179,12 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
 | `bar` | Eine Zahl mit einem Balken darunter, vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100). | `bar\|820\|ppm\|CO2\|yellow\|molecule-co2\|400\|2000` |
 | `text` | Eine Textzeile; eine lange nimmt zwei Zeilen, wo die Karte Platz hat. | `text\|Tür offen\|\|\|\|door-open` |
 | `row` | Eine Zeile einer Tabelle: das Label links, der Wert rechts. Aufeinanderfolgende Zeilen stehen als Tabelle. | `row\|20,8\|°C\|Küche` |
-| `ring` | Ein Ring, gefüllt vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), das Icon innen, der Wert darunter. Aufeinanderfolgende Ringe stehen nebeneinander; auf einer Karte mit Werten steht ein Ring kompakt zwischen ihnen, seine Zahl innen; wo sie nicht passen, steht die Zahl als Wert. | `ring\|46\|%\|Feuchte\|green\|water-percent\|0\|100` |
+| `ring` | Ein Ring, gefüllt vom kleinsten bis zum größten Wert (ohne Angabe 0 und 100), der Wert in seiner Mitte, Icon und Label darunter. Aufeinanderfolgende Ringe stehen nebeneinander, alle so groß wie der größte; auf einer Karte mit Werten steht ein Ring kompakt zwischen ihnen, seine Zahl innen; wo sie nicht passen, steht die Zahl als Wert. | `ring\|46\|%\|Feuchte\|green\|water-percent\|0\|100` |
 
 - **Farbe**: `red`, `orange`, `yellow`, `green`, `mint`, `blue`, `purple`, `pink` oder `gray`. Wie auf Tesseras eigenen
-  Tiles markiert sie einen Teil und färbt nie seine Schrift: Sie färbt das Icon (einen Punkt, wo der Teil keins hat),
-  den Balken und ein Kästchen. `green` gut, `yellow` und `orange` mäßig, `red` schlecht und `blue` die Akzentfarbe
+  Tiles markiert sie einen Teil: Sie färbt das Icon (einen Punkt, wo der Teil keins hat), den Balken, den Ring und ein
+  Kästchen, die Schrift bleibt in den Farben des Looks. Die Option **Werte in ihrer Farbe** der Kachel färbt auch die
+  Zahlen. `green` gut, `yellow` und `orange` mäßig, `red` schlecht und `blue` die Akzentfarbe
   sind Tesseras eigene Farben, hell und dunkel gut lesbar.
 - **Icon**: ein Name aus der Icon-Auswahl des Editors, mit oder ohne `mdi:`.
 - **Kästchen**: Ein Icon-Feld, das mit `#` beginnt, zeigt den Text danach in einem Kästchen in der Farbe des Teils (ohne
@@ -202,7 +203,10 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
   sich ein Wert ändert.
 - Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` wieder da ist.
 - Ein Plugin-Tile kann keine ganze Seite belegen; jede andere Größe des Rasters geht.
-- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile.
+- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat zwei eigene
+  Optionen: **Namen zeigen** (an) für den Namen über den Teilen (aus gibt den Teilen seinen Platz), und **Werte in ihrer
+  Farbe** (aus), um auch jede Zahl in der Farbe ihres Teils zu zeigen, hell und dunkel lesbar. Die Karte, die ein Tippen
+  öffnet, zeigt ihre Zahlen weiter in der normalen Schriftfarbe.
 
 ## Wie es funktioniert
 

@@ -5,8 +5,10 @@
   Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.
 - Eine lange Textzeile nimmt zwei Zeilen, wo die Karte Platz hat, statt mit Punkten zu enden.
 - Tabellen- und Textzeilen bekommen eine größere Schrift, wo die Karte Platz hat, nie größer als ihre Werte.
-- Ein Ring: `ring`-Teile stehen als Ringe im Look von Tesseras Meter, mehrere nebeneinander (die Luft eines Raums, die
-  Akkus im Haus), das Icon in einer blassen Scheibe und der Wert unter der Öffnung. Auf einer Karte mit Werten ist ein Ring
+- Ein Ring: `ring`-Teile stehen als Ringe, mehrere nebeneinander (die Luft eines Raums, die Akkus im Haus), der Wert
+  groß in der Mitte seines Rings, Icon und Label darunter, alle Ringe einer Reihe so groß wie der größte (Schumeys
+  Entwurf, Pull Request #2). Ein Ring ohne Icon behält sein Label, denn seine Farbe sagt, wie gut ein Wert ist, nicht,
+  was er ist. Auf einer Karte mit Werten ist ein Ring
   kompakt: Er steht zwischen ihnen, so hoch wie ihre Zahlen, mit seiner Zahl innen (ein Anteil neben zwei Zählungen).
   Auf einem zu kleinen Tile stehen ihre Zahlen als Werte.
 - Ein Kästchen: Ein Icon-Feld, das mit `#` beginnt, zeigt seinen Text in einem Kästchen in der Farbe des Teils, wie die
@@ -15,6 +17,8 @@
 - Die Karte hält ihre Teile im PSRAM des Bildschirms, so bleibt der Speicher frei, den das WLAN braucht.
 - Werte bekommen die großen Ziffern auch neben einer Zeile mit Uhrzeit oder Worten (`row|15:25||Renntag`): Es zählen nur
   die Werte, die groß stehen, so sind zwei Zahlen über einem Anteil und einer Uhrzeit so groß, wie die Karte es zulässt.
+- Zwei Optionen der Kachel im Inspector (Schumey, Pull Request #2): **Namen zeigen** (an) und **Werte in ihrer Farbe**
+  (aus). Beide lassen eine Kachel standardmäßig so, wie sie war.
 - Braucht Tessera 0.4.88 oder neuer.
 
 ## 0.5.0 - 2026-10-14

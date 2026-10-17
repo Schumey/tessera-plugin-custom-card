@@ -5,8 +5,10 @@
   values of a list (rooms, batteries, departures) stand under each other.
 - A long line of words takes two lines where the card has the room, instead of ending in dots.
 - Rows and lines of words take a larger face where the card has room for it, never larger than its values.
-- A ring: `ring` parts stand as rings in the look of Tessera's meter, several side by side (the air of a room, the
-  batteries of the house), the icon in a pale disc and the value under the open bottom. On a card with values a ring is
+- A ring: `ring` parts stand as rings, several side by side (the air of a room, the batteries of the house), the value
+  large in the middle of its ring and the icon and label under it, all rings of a row as large as the largest
+  (Schumey's design, pull request #2). A ring without an icon keeps its label, as its colour says how good it is, not
+  what it is. On a card with values a ring is
   compact: it stands among them as tall as their numbers, with its number inside (a share beside two counts). On a
   tile too small for them, their numbers stand as values.
 - A badge: an icon field that starts with `#` shows its words in a box of the part's colour, as a line's number in a
@@ -15,6 +17,8 @@
 - Values take the large digits also beside a row with a time or words (`row|15:25||Race day`): only the values that
   stand large count, so two counts over a share and a time are as large as the card lets them be.
 - The card keeps its parts in the screen's PSRAM, so the memory Wi-Fi needs stays free.
+- Two options of the tile in the inspector (Schumey, pull request #2): **Show the name** (on) and **Values in their
+  colour** (off). Both keep a tile as it was by default.
 - Needs Tessera 0.4.88 or later.
 
 ## 0.5.0 - 2026-10-14
