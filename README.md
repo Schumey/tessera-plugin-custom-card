@@ -68,7 +68,9 @@ moderate, `red` bad, `blue` the accent. An icon is a name from the editor's icon
   can stand under each other instead.
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
 - When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
-- The tile's background colour is set in the editor, as for every tile.
+- The tile's background colour is set in the editor, as for every tile. Its inspector has two options of its own:
+  **Show the name** (on) for the tile's name over the parts, and **Values in their colour** (off) to paint each number
+  in its part's colour as well, readable in light and dark. The card a tap opens keeps its numbers in the look's ink.
 
 ## How it works
 
