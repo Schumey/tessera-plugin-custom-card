@@ -8,16 +8,17 @@ tiles:
     options: { show_name: false, coloured_values: true }
     sizes: [2x1, 2x2]
   - tile: card
-    name: House
-    entity: sensor.house_table
-    sizes: [1x2, 2x2, 3x2, 3x3]
+    name: Living room
+    entity: sensor.living_room_card
+    sizes: [4x2, 2x2, 2x1]
   - tile: card
     name: Entrance
     entity: sensor.entrance_card
     sizes: [1x1, 2x1, 2x2, 4x2]
   - tile: card
-    name: Living room
-    entity: sensor.living_room_card
+    name: House
+    entity: sensor.house_table
+    sizes: [1x2, 2x2, 3x2, 3x3]
   - tile: card
     name: Front door
     entity: sensor.front_door_card
