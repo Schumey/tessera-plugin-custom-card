@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Stand der Arbeit (Fork von Schumey, Stand 2026-10-17)
+# Stand der Arbeit (Fork von Schumey, Stand 2026-10-17, nach PR #2)
 
 Notizen für die Arbeit an diesem Fork. Diese Datei gehört nicht in einen Pull Request an StofLE: nicht auf `arc`
 committen (siehe unten).
@@ -13,8 +13,14 @@ committen (siehe unten).
 - `main` (Fork): 0.7.0 als `0efe050`, auf GitHub. Seine Historie ist unsauber: ein Merge `4acdca2` hat den alten
   0.6.0-Commit `2a2d963` mit falschem Autor (StofLE) wieder hereingeholt. Nicht umschreiben, für den PR nicht nehmen.
 - `arc`: der saubere Branch für den PR an `StofLE:main`, auf `upstream/main` (`dae1285`, 0.5.0) mit drei Commits von
-  Schumey: `fb497b9` 0.6.0, `32ef6b9` 0.6.1, `e6602e4` 0.7.0. Die Dateien sind identisch mit `main`
-  (`git diff main arc` ist leer). `e6602e4` ist noch nicht gepusht.
+  Schumey: `fb497b9` 0.6.0, `32ef6b9` 0.6.1, `7f586f3` 0.7.0 (Cherry-Pick von `0efe050`; der früher notierte
+  `e6602e4` war in keinem Klon mehr vorhanden). Gepusht. Die Dateien sind bis auf diese CLAUDE.md identisch mit `main`.
+- PR: StofLE/tessera-plugin-custom-card#2 (https://github.com/StofLE/tessera-plugin-custom-card/pull/2), offen seit
+  2026-10-17, `Schumey:arc` → `StofLE:main`.
+- `upstream/next` (StofLE, 2026-10-14) hat schon einen eigenen Part `ring` mit demselben Feldaufbau, ebenfalls als
+  0.6.0, dazu Tabellen-Zeilen, Badges und PSRAM. `arc` und `next` haben Konflikte in sechs Dateien. Der PR weist
+  darauf hin und bietet an, die Teile, die `next` fehlen (Wert in der Ringmitte, die zwei Optionen), auf `next` neu
+  aufzusetzen.
 - Git-Autor in diesem Repo: `Schumey <avshsk@gmail.com>` (lokale `git config`).
 
 ## Was gebaut wurde (0.6.0 bis 0.7.0)
@@ -45,9 +51,7 @@ committen (siehe unten).
 
 ## Offene Punkte
 
-- 0.7.0 ist noch nicht auf dem echten Gerät getestet (Guition 4″). Getestet war nur der Stand vor dem Wert in der
-  Ringmitte; dabei fehlten auf 2x2 die Labels, was 0.7.0 beheben soll.
-- `arc` ist noch nicht mit `e6602e4` gepusht; ob der PR an StofLE schon offen ist, ist nicht bestätigt.
+- Antwort von StofLE auf PR #2 abwarten, vor allem zur Überschneidung mit `ring` auf `next`.
 - Die Detail-Karte zeigt auf der Bench „Choose a sensor“. Das war schon vor allen Änderungen so (mit dem
   unveränderten Stand nachgeprüft), im `store.png` zeigt sie aber Werte.
 - Auf 1x1 mit zwei Ringen ist es eng; früher fehlte dort der zweite Ring kommentarlos, nach 0.6.1 passen auf dem
@@ -55,18 +59,22 @@ committen (siehe unten).
 
 ## Nächste Schritte
 
-1. In GitHub Desktop `arc` wählen und pushen (**Push origin**), dann den PR prüfen: base `StofLE/...:main` ← head
-   `Schumey/...:arc`, genau drei Commits von Schumey.
-2. Release 0.7.0 im Fork machen, auf dem Gerät testen; im Inspector **Namen zeigen** aus- und **Werte in ihrer Farbe**
-   einschalten. Ein Foto für den PR machen.
-3. Im PR beschreiben: Syntax mit Beispiel, Bench auf vier Bildschirmen ohne Warnung, auf welchem Gerät getestet,
-   Hinweis auf die Detail-Karte auf der Bench, Versionssprung auf 0.7.0 (StofLE kann anders zählen).
+Erledigt am 2026-10-17: `arc` gepusht, 0.7.0 auf dem Guition 4″ getestet (läuft, mit beiden Optionen), Bench
+`--strict` auf vier Bildschirmen (cyd, guition, waveshare43-portrait, jc8012p4a1) mit 0 Warnungen (nur Info-Hinweise
+zu Rastergrößen), PR #2 eröffnet.
+
+1. Auf StofLEs Antwort zu PR #2 reagieren. Will er seinen `ring` behalten: einen neuen Branch auf `upstream/next`
+   anlegen und nur den Wert in der Ringmitte und die Optionen `show_name` und `coloured_values` dorthin übertragen.
+2. Optional ein Foto vom Gerät im PR nachreichen.
 
 ## Werkzeuge auf diesem Rechner (Windows)
 
-- In PowerShell gibt es kein `git`; Git läuft in WSL (Ubuntu). Immer mit `git -c core.autocrlf=true …`, sonst sieht
-  das WSL-Git wegen der Windows-Zeilenenden fast jede Datei als geändert. Gepusht wird über GitHub Desktop: Ubuntu ist
-  bei GitHub nicht angemeldet.
+- In PowerShell gibt es kein `git`, im Git Bash von Claude Code aber schon; dort klappen auch `git push` und `gh`
+  (StofLE-PRs mit `gh pr … -R StofLE/tessera-plugin-custom-card`). Das Git in WSL (Ubuntu) immer mit
+  `git -c core.autocrlf=true …` aufrufen, sonst sieht es wegen der Windows-Zeilenenden fast jede Datei als geändert.
+  Ubuntu ist bei GitHub nicht angemeldet.
+- Die Bench braucht in WSL `libsdl2-dev` (seit 2026-10-17 installiert). Die erste Bench nach einem leeren Cache baut
+  das venv mit ESPHome neu (einige Minuten).
 - Den Autor oder die Historie eines schon gepushten Commits umschreiben (amend, Force-Push) ist für Claude gesperrt;
   das macht Schumey selbst.
 - `check.py` geht aus PowerShell (`python ../tessera-plugins/tools/check.py .`); es schreibt dann `: ok` statt
