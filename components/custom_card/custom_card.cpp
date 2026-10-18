@@ -556,12 +556,15 @@ class Drawing {
   };
   // The largest face for the values with the name alone (larger is earlier in Font, DIGITS before them all, and only
   // where every value is digits it holds), with rings as rings or as values. Labels before whole words: first with a
-  // text beside other parts whole, then with it cut short.
+  // text beside other parts whole, then with it cut short. Where no label is needed (every part has a mark), the marks
+  // stand before the numbers, and the row of labels only where it gives the values a larger face: a mark moves up to
+  // its label then, so four values in one row of a wide tile have their column's whole width.
   Pick search(bool rings, bool named, bool unmarked) {
     rings_ = rings;
     arrange();
-    Pick pick;
-    for (bool labelled : {unmarked, false}) {
+    Pick best;
+    for (bool labelled : {unmarked, !unmarked}) {
+      Pick pick;
       for (bool whole : {true, false}) {
         whole_texts_ = whole;
         for (int index = 0; index < ARRANGEMENTS; ++index) {
@@ -579,10 +582,15 @@ class Drawing {
             if (pick.found) break;
           }
         }
-        if (pick.found) return pick;
+        if (pick.found) break;
       }
+      // Never at the cost of the name or of words kept whole.
+      if (pick.found && (!best.found || (rank(pick.face) < rank(best.face) && (pick.whole || !best.whole) &&
+                                         (pick.chosen.head || !best.chosen.head))))
+        best = pick;
+      if (best.found && unmarked) return best;
     }
-    return pick;
+    return best;
   }
 
   // Lay the parts out as the departures plugin does: the value takes the largest face that fits beside the tile's name,

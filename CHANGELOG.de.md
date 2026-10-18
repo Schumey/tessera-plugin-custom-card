@@ -6,6 +6,8 @@
   das Label steht in der offenen Unterseite seines Rings statt darunter.
 - Vier Werte auf einer breiten Kachel mit einer Reihe stehen als zwei Reihen zu zwei, wo sie dadurch größer werden als
   in einer Reihe.
+- Werte, deren Teile alle ein Icon haben, nehmen die Zeile der Labels, wo sie dadurch größer werden: Das Icon rückt zu
+  seinem Label, so hat jeder Wert die ganze Breite seiner Spalte (vier Werte in einer Reihe unter dem Namen der Kachel).
 
 ## 0.6.0 - 2026-10-17
 - Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die

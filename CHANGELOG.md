@@ -5,6 +5,8 @@
   high), all of one size, their values in the largest face the rings hold, and the label stands in the open bottom of
   its ring instead of under it.
 - Four values on a wide tile one row high stand as two rows of two where that gives them a larger face than one row.
+- Values whose parts all have an icon take the row of labels where it makes them larger: the icon moves up to its
+  label, so each value has its column's whole width (four values in one row under the tile's name).
 
 ## 0.6.0 - 2026-10-17
 - A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the
