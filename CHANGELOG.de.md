@@ -1,5 +1,12 @@
 # Änderungen
 
+## 0.6.1 - 2026-10-18
+- Ringe so groß wie die Kachel: Auf einer Karte mit Ringen wachsen sie in den Platz, den die Kachel hat (so hoch wie
+  eine breite Kachel mit einer Reihe), alle gleich groß, ihre Werte in der größten Schrift, die die Ringe fassen, und
+  das Label steht in der offenen Unterseite seines Rings statt darunter.
+- Vier Werte auf einer breiten Kachel mit einer Reihe stehen als zwei Reihen zu zwei, wo sie dadurch größer werden als
+  in einer Reihe.
+
 ## 0.6.0 - 2026-10-17
 - Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die
   Werte einer Liste (Räume, Akkus, Abfahrten) untereinander.

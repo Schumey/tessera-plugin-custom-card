@@ -366,6 +366,12 @@ class Drawing {
     return true;
   }
   int words_row() const { return std::max(ui::line_height(Font::BODY), ui::line_height(Font::ICON_SMALL)); }
+  // The words under the rings of a line: as tall as an icon only where one of them has one, else the label alone.
+  int ring_row(const Line &line) const {
+    for (int i = line.first; i < line.first + line.count; ++i)
+      if (parts_[i].icon) return words_row();
+    return ui::line_height(Font::BODY);
+  }
   // The words of a text, a row and a bar across the width: one step above the body (or larger, words_, where the card
   // has the room), and the body itself where the values had to go down to it, so a tall list of texts shrinks with
   // them instead of running out of the tile.
@@ -399,11 +405,21 @@ class Drawing {
   // when a digit ticks) and never smaller than a key, its stroke the meter's (a fourteenth). The rings of one line are as
   // large as its largest, so their labels stand on one row.
   static int ring_thick(int dia) { return std::max(ui::px(4), dia / 14); }
-  int ring_dia(const Part &part, Font face) const {
+  int natural_dia(const Part &part, Font face) const {
     const float w = static_cast<float>(ui::text_width(shape(part.value), face) + unit_width(part));
-    const float g = 0.75f * static_cast<float>(ui::line_height(face));
+    const float g = 0.62f * static_cast<float>(ui::line_height(face));  // about the digits' height
     const int inner = static_cast<int>(std::ceil(std::sqrt(w * w + g * g))) + 2 * ui::px(4);
     return std::max(ui::px(48), inner + 2 * std::max(ui::px(4), inner / 12));
+  }
+  // Where the tile has room left, layout() makes the rings larger than their values need (ring_min_).
+  int ring_dia(const Part &part, Font face) const { return std::max(ring_min_, natural_dia(part, face)); }
+  // The face of the values in the rings: the one layout() found larger for them (ring_face_), else the values' own.
+  Font inner_face(Font face) const { return rank(ring_face_) < rank(face) ? ring_face_ : face; }
+  // Where a ring's words (`row` high) start, from its top: at the bottom of its open end, under the ends of its arc
+  // (three quarters down), but never over its value.
+  int ring_words_at(int dia, int row, Font face) const {
+    const int lh = ui::line_height(inner_face(face));
+    return std::min(dia, std::max({3 * dia / 4, dia - row, (dia - lh) / 2 + lh}));
   }
   int ring_dia(const Line &line, Font face) const {
     int dia = 0;
@@ -454,8 +470,12 @@ class Drawing {
         case Kind::RING:
           // A ring keeps its icon and label under it whatever the labels of the values do: it has nowhere else to put a
           // mark, and without them nothing says what its number is.
-          h = std::max(h, meter(parts_[i]) ? ring_dia(line, face) + (has_words(line) ? words_row() : 0)
-                                           : words + ui::line_height(face));
+          if (meter(parts_[i])) {
+            const int dia = ring_dia(line, face);
+            h = std::max(h, has_words(line) ? std::max(dia, ring_words_at(dia, ring_row(line), face) + ring_row(line)) : dia);
+          } else {
+            h = std::max(h, words + ui::line_height(face));
+          }
           break;
         case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
@@ -517,8 +537,16 @@ class Drawing {
   }
 
   struct Try { bool head, labels; };
+  // The arrangements a search tries: side by side, stacked, and stacked two to a row (four values on a wide flat tile
+  // as two rows of two, where that gives them a larger face than one row of four).
+  static constexpr int ARRANGEMENTS = 3;
+  void arrange() {
+    arranged_[0] = side_by_side();
+    arranged_[1] = stacked();
+    arranged_[2] = stacked(2);
+  }
   // What a search found: whether anything fits, the values' face, whether the name and the labels stand, whether texts
-  // beside other parts stay whole, and which arrangement (0 side by side, 1 stacked).
+  // beside other parts stay whole, and which arrangement (an index of arranged_).
   struct Pick {
     bool found = false;
     Font face = Font::BODY;
@@ -531,13 +559,12 @@ class Drawing {
   // text beside other parts whole, then with it cut short.
   Pick search(bool rings, bool named, bool unmarked) {
     rings_ = rings;
-    arranged_[0] = side_by_side();
-    arranged_[1] = stacked();
+    arrange();
     Pick pick;
     for (bool labelled : {unmarked, false}) {
       for (bool whole : {true, false}) {
         whole_texts_ = whole;
-        for (int index = 0; index < 2; ++index) {
+        for (int index = 0; index < ARRANGEMENTS; ++index) {
           const Lines &all = arranged_[index];
           if (all.empty()) continue;
           for (bool head : {named, false}) {
@@ -573,6 +600,8 @@ class Drawing {
       return;
     }
     words_ = Font::BODY_LARGE;
+    ring_min_ = 0;
+    ring_face_ = Font::BODY;
     const bool named = !shown_name_.empty();
     // A part whose label has no icon or colour to stand in for it keeps the row of labels, whatever it costs: without
     // it nothing would say what its number is.
@@ -599,8 +628,7 @@ class Drawing {
     // Where nothing fits at all, the fallback below shows numbers, never a ring too large for the tile.
     if (!pick.found) rings_chosen = false;
     rings_ = rings_chosen;
-    arranged_[0] = side_by_side();
-    arranged_[1] = stacked();
+    arrange();
     const bool found = pick.found;
     Font face = pick.face;
     const Try chosen = pick.chosen;
@@ -615,6 +643,34 @@ class Drawing {
         words_ = Font::HEADLINE;
         if (!fits(*lines, face, chosen.head, chosen.labels)) words_ = Font::BODY_LARGE;
         strict_rows_ = false;
+      }
+    }
+    // The rings of a card of rings as large as the tile has room for, all of one size, and their values in the largest
+    // face their rings hold: the face that fitted is only the least they get.
+    bool meters = false;
+    for (const Part &part : parts_) meters = meters || meter(part);
+    if (found && meters) {
+      int lo = 0, hi = width_;
+      while (lo < hi) {
+        ring_min_ = (lo + hi + 1) / 2;
+        if (fits(*lines, face, chosen.head, chosen.labels)) lo = ring_min_;
+        else hi = ring_min_ - 1;
+      }
+      ring_min_ = lo;
+      bool digits = true;
+      for (const Part &part : parts_)
+        if (meter(part) && !ui::covers(part.value, Font::DIGITS)) digits = false;
+      const Font every[] = {Font::DIGITS, Font::VALUE, Font::HEADLINE, Font::TITLE, Font::BODY_LARGE, Font::BODY};
+      for (Font f : every) {
+        if (rank(f) >= rank(face) || (f == Font::DIGITS && !digits)) continue;
+        bool held = true;
+        for (const Line &line : *lines)
+          for (int i = line.first; i < line.first + line.count; ++i)
+            if (meter(parts_[i]) && natural_dia(parts_[i], f) > ring_dia(line, face)) held = false;
+        // A larger face pushes the words lower: the tile still has to hold them.
+        ring_face_ = f;
+        if (held && fits(*lines, face, chosen.head, chosen.labels)) break;
+        ring_face_ = Font::BODY;
       }
     }
     // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
@@ -732,8 +788,9 @@ class Drawing {
   // The ring's colour marks it, so it needs no dot.
   void place_ring(Slot &s, const Part &part, const Line &line, int x, int y, int column, int h, Font face, bool words) {
     const int dia = ring_dia(line, face), thick = ring_thick(dia), cx = x + column / 2;
-    const int row_h = words ? words_row() : 0;
-    const int top = y + std::max(0, (h - dia - row_h) / 2);
+    const int row_h = words ? ring_row(line) : 0;
+    const int at = words ? ring_words_at(dia, row_h, face) : dia;
+    const int top = y + std::max(0, (h - std::max(dia, at + row_h)) / 2);
     lv_obj_set_size(s.arc, dia, dia);
     lv_obj_set_pos(s.arc, cx - dia / 2, top);
     lv_obj_set_style_arc_width(s.arc, thick, LV_PART_MAIN);
@@ -743,13 +800,14 @@ class Drawing {
       share = std::min(1.0f, std::max(0.0f, (value - part.min) / (part.max - part.min)));
     lv_arc_set_value(s.arc, static_cast<int>(std::lround(share * 1000)));
     show(s.arc, true);
-    const int vw = std::min(dia - 2 * thick, ui::text_width(part.value, face) + unit_width(part));
-    place_value(s, part, face, cx - vw / 2, top + (dia - ui::line_height(face)) / 2, vw);
+    const Font inner = inner_face(face);
+    const int vw = std::min(dia - 2 * thick, ui::text_width(part.value, inner) + unit_width(part));
+    place_value(s, part, inner, cx - vw / 2, top + (dia - ui::line_height(inner)) / 2, vw);
     if (!words) return;
     const int mark = part.icon ? ui::text_width(ui::icon(part.icon), Font::ICON_SMALL) : 0;
     const int space = mark && part.label[0] ? ui::px(6) : 0;
     const int row = std::min(column, mark + space + (part.label[0] ? ui::text_width(part.label, Font::BODY) : 0));
-    const int lx = cx - row / 2, ly = top + dia;
+    const int lx = cx - row / 2, ly = top + at;
     if (mark) place_mark(s, part, lx, ly, row_h, Font::ICON_SMALL);
     if (part.label[0] && row - mark - space > 0) {
       const int lh = ui::line_height(Font::BODY);
@@ -868,7 +926,9 @@ class Drawing {
   Font words_ = Font::BODY_LARGE;     // the face of texts, rows and bars across, chosen by layout()
   bool rings_ = true;                 // rings drawn as rings (layout() falls back to values where none fits)
   bool mixed_ = false;                // rings among values: compact rings in the values' rows
-  Lines arranged_[2];                 // side by side and stacked, for the rings_ that layout() chose
+  Lines arranged_[ARRANGEMENTS];      // the arrangements of arrange(), for the rings_ that layout() chose
+  int ring_min_ = 0;                  // the least a ring of a card of rings is across, chosen by layout()
+  Font ring_face_ = Font::BODY;       // the face of the values in those rings, chosen by layout()
   bool strict_rows_ = false;          // while layout() tries larger words: labels and texts beside parts stay whole  // texts whole: beside other parts only where they fit, across in two lines
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};

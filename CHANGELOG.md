@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 - 2026-10-18
+- Rings as large as the tile: on a card of rings they grow into the room the tile has (as tall as a wide tile one row
+  high), all of one size, their values in the largest face the rings hold, and the label stands in the open bottom of
+  its ring instead of under it.
+- Four values on a wide tile one row high stand as two rows of two where that gives them a larger face than one row.
+
 ## 0.6.0 - 2026-10-17
 - A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the
   values of a list (rooms, batteries, departures) stand under each other.
