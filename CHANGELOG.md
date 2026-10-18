@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2 - 2026-10-18
+- A fourth option of the tile: **Larger values** (off). Tessera has no face between the card's number and the large
+  digits, so with it a value that stops at the card's number is drawn up to half again its size (never larger than the
+  digits, its edges a little softer), as far as its column and the tile's height allow.
+
 ## 0.6.1 - 2026-10-18
 - Rings as large as the tile: on a card of rings they grow into the room the tile has (as tall as a wide tile one row
   high), all of one size, their values in the largest face the rings hold, and the label stands in the open bottom of

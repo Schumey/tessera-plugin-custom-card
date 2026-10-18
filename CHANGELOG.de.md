@@ -1,5 +1,11 @@
 # Änderungen
 
+## 0.6.2 - 2026-10-18
+- Eine vierte Option der Kachel: **Größere Werte** (aus). Tessera hat keine Schrift zwischen der Zahl einer Karte und
+  den großen Ziffern, deshalb wird damit ein Wert, der bei der Zahl der Karte stehen bleibt, bis zur Hälfte größer
+  gezeichnet (nie größer als die großen Ziffern, seine Kanten etwas weicher), so weit seine Spalte und die Höhe der
+  Kachel reichen.
+
 ## 0.6.1 - 2026-10-18
 - Ringe so groß wie die Kachel: Auf einer Karte mit Ringen wachsen sie in den Platz, den die Kachel hat (so hoch wie
   eine breite Kachel mit einer Reihe), alle gleich groß, ihre Werte in der größten Schrift, die die Ringe fassen, und

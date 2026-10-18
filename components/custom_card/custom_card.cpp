@@ -165,10 +165,12 @@ class Drawing {
 
   // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead, and a tile may turn it
   // off). `coloured`: a value takes its part's colour too, not only its mark. `per_row`: how many values stand in a
-  // row, 0 for what makes them largest, MAX_IN_ROW for all in one row.
+  // row, 0 for what makes them largest, MAX_IN_ROW for all in one row. `grow`: values in VALUE drawn larger where the
+  // tile has the room (scale_).
   void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled,
-              bool coloured, int per_row = 0) {
+              bool coloured, int per_row = 0, bool grow = false) {
     per_row_ = per_row;
+    grow_ = grow;
     width_ = width;
     height_ = height;
     flat_ = flat;
@@ -457,6 +459,11 @@ class Drawing {
   int unit_width(const Part &part) const {
     return !part.unit[0] ? 0 : ui::px(3) + ui::text_width(part.unit, Font::BODY);
   }
+  // The values in columns in VALUE drawn larger (scale_, 256 for their own size) where the tile has the room: Tessera
+  // has no face between VALUE and DIGITS, and DIGITS is often too large for four values in a row.
+  int value_scale(Font face) const { return face == Font::VALUE ? scale_ : 256; }
+  int value_height(Font face) const { return ui::line_height(face) * value_scale(face) / 256; }
+  int value_width(const std::string &text, Font face) const { return ui::text_width(text, face) * value_scale(face) / 256; }
 
   int line_height(const Line &line, Font face, bool labels) const {
     const Part &first = parts_[line.first];
@@ -468,18 +475,20 @@ class Drawing {
     for (int i = line.first; i < line.first + line.count; ++i) {
       switch (parts_[i].kind) {
         case Kind::VALUE:
-        case Kind::ROW: h = std::max(h, words + ui::line_height(face)); break;
+        case Kind::ROW: h = std::max(h, words + value_height(face)); break;
         case Kind::RING:
           // A ring keeps its icon and label under it whatever the labels of the values do: it has nowhere else to put a
           // mark, and without them nothing says what its number is.
           if (meter(parts_[i])) {
             const int dia = ring_dia(line, face);
             h = std::max(h, has_words(line) ? std::max(dia, ring_words_at(dia, ring_row(line), face) + ring_row(line)) : dia);
-          } else {
+          } else if (compact(parts_[i])) {
             h = std::max(h, words + ui::line_height(face));
+          } else {
+            h = std::max(h, words + value_height(face));
           }
           break;
-        case Kind::BAR: h = std::max(h, words + ui::line_height(face) + ui::px(4) + bar_thickness()); break;
+        case Kind::BAR: h = std::max(h, words + value_height(face) + ui::px(4) + bar_thickness()); break;
         default: h = std::max(h, text_row(parts_[i], face));
       }
     }
@@ -524,7 +533,7 @@ class Drawing {
           continue;
         }
         const int mark = labels || !has_mark(part) ? 0 : mark_width(part, inline_icon(face)) + ui::px(6);
-        if (mark + ui::text_width(shape(part.value), face) + unit_width(part) > column) return false;
+        if (mark + value_width(shape(part.value), face) + unit_width(part) > column) return false;
       }
     }
     return true;
@@ -613,6 +622,7 @@ class Drawing {
     words_ = Font::BODY_LARGE;
     ring_min_ = 0;
     ring_face_ = Font::BODY;
+    scale_ = 256;
     const bool named = !shown_name_.empty();
     // A part whose label has no icon or colour to stand in for it keeps the row of labels, whatever it costs: without
     // it nothing would say what its number is.
@@ -682,6 +692,16 @@ class Drawing {
         ring_face_ = f;
         if (held && fits(*lines, face, chosen.head, chosen.labels)) break;
         ring_face_ = Font::BODY;
+      }
+    }
+    // Values in VALUE as large as the tile has room for, up to half again their size and never past DIGITS: the face
+    // that fitted is only the least they get. Only with the tile's option: the glyphs are drawn larger, a little softer.
+    if (grow_ && found && face == Font::VALUE) {
+      const int most = std::min(384, 256 * ui::line_height(Font::DIGITS) / ui::line_height(Font::VALUE));
+      for (int s = most; s > 256; s -= 8) {
+        scale_ = s;
+        if (fits(*lines, face, chosen.head, chosen.labels)) break;
+        scale_ = 256;
       }
     }
     // Where nothing fits, the values two to a row, else one, so that no number is cut short; the lines that fit whole
@@ -772,24 +792,30 @@ class Drawing {
     }
   }
 
-  // A value and its unit after it, on the value's baseline.
-  void place_value(Slot &s, const Part &part, Font face, int x, int y, int room) {
+  // A value and its unit after it, on the value's baseline; the value `scale` / 256 of its face's size, grown from its
+  // top left corner.
+  void place_value(Slot &s, const Part &part, Font face, int x, int y, int room, int scale = 256) {
     const int uw = unit_width(part);
-    const int vw = std::min(ui::text_width(part.value, face), std::max(1, room - uw));
+    // Whole where it fits at its scale as layout() measured it (value_width), else cut to the room.
+    const int tw = ui::text_width(part.value, face);
+    const int vw = tw * scale / 256 <= room - uw ? tw : std::max(1, (room - uw) * 256 / scale);
     const int vh = ui::line_height(face);
     ui::set_font(s.value, face);
     ui::set_text(s.value, part.value);
     lv_obj_set_size(s.value, vw, vh);
     lv_obj_set_pos(s.value, x, y);
+    lv_obj_set_style_transform_pivot_x(s.value, 0, 0);
+    lv_obj_set_style_transform_pivot_y(s.value, 0, 0);
+    lv_obj_set_style_transform_scale(s.value, scale, 0);
     show(s.value, true);
     if (part.unit[0]) {
       const lv_font_t *big = ui::font(face), *small = ui::font(Font::BODY);
       const int uh = ui::line_height(Font::BODY);
-      const int baseline = y + vh - (big ? big->base_line : 0);
+      const int baseline = y + (vh - (big ? big->base_line : 0)) * scale / 256;
       ui::set_font(s.unit, Font::BODY);
       ui::set_text(s.unit, part.unit);
       lv_obj_set_size(s.unit, uw - ui::px(3), uh);
-      lv_obj_set_pos(s.unit, x + vw + ui::px(3), baseline - uh + (small ? small->base_line : 0));
+      lv_obj_set_pos(s.unit, x + vw * scale / 256 + ui::px(3), baseline - uh + (small ? small->base_line : 0));
       show(s.unit, true);
     }
   }
@@ -915,14 +941,14 @@ class Drawing {
         vy += words_row();
       } else if (has_mark(part) && !compact(part)) {
         // No row for the words: the mark stands before the number, centred on it, and says what it is.
-        room = place_mark(s, part, x, y, ui::line_height(face), inline_icon(face)) + ui::px(6);
+        room = place_mark(s, part, x, y, value_height(face), inline_icon(face)) + ui::px(6);
       }
       if (compact(part)) {
         place_compact_ring(s, part, x, vy, face);
         continue;
       }
-      place_value(s, part, face, x + room, vy, column - room);
-      if (part.kind == Kind::BAR) place_bar(s, part, x, vy + ui::line_height(face) + ui::px(4), column);
+      place_value(s, part, face, x + room, vy, column - room, value_scale(face));
+      if (part.kind == Kind::BAR) place_bar(s, part, x, vy + value_height(face) + ui::px(4), column);
     }
   }
 
@@ -930,6 +956,7 @@ class Drawing {
   int width_ = 0, height_ = 0;
   bool flat_ = false, titled_ = true, coloured_ = false;
   int per_row_ = 0;  // the tile's option: values to a row, 0 for the layout's choice
+  bool grow_ = false;  // the tile's option: values drawn larger than their face where there is room
   // Kept in PSRAM (tessera::Text and tessera::List, plugin API 0.10): the memory inside the chip stays Wi-Fi's.
   tessera::Text name_, shown_name_, note_text_;
   tessera::List<Part> parts_;
@@ -941,6 +968,7 @@ class Drawing {
   Lines arranged_[ARRANGEMENTS];      // the arrangements of arrange(), for the rings_ that layout() chose
   int ring_min_ = 0;                  // the least a ring of a card of rings is across, chosen by layout()
   Font ring_face_ = Font::BODY;       // the face of the values in those rings, chosen by layout()
+  int scale_ = 256;                   // how much larger the values in VALUE are drawn, chosen by layout()
   bool strict_rows_ = false;          // while layout() tries larger words: labels and texts beside parts stay whole  // texts whole: beside other parts only where they fit, across in two lines
   Slot slots_[MAX_PARTS];
   lv_obj_t *head_{}, *note_{};
@@ -957,11 +985,12 @@ class CardTile : public tessera::Tile {
     // A tile one row high and two columns or more puts its parts side by side, as the departures plugin turns into a
     // list on two columns.
     // Its options (Schumey, pull request #2): the name over the parts, and the values in their parts' colours.
-    // And how many values stand in a row: the layout's choice, all in one row, or two.
+    // And how many values stand in a row: the layout's choice, all in one row, or two. And whether values grow past
+    // their face into the room the tile has.
     const std::string per_row = c.options["per_row"] | "auto";
     drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "",
                     c.options["show_name"] | true, c.options["coloured_values"] | false,
-                    per_row == "all" ? MAX_IN_ROW : per_row == "two" ? 2 : 0);
+                    per_row == "all" ? MAX_IN_ROW : per_row == "two" ? 2 : 0, c.options["large_values"] | false);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }

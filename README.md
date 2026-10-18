@@ -198,11 +198,14 @@ a ring its lowest and highest value. Fields at the end may be left out; a field 
 - The face of a value is chosen for its shape, not its digits, so the tile keeps its size when a value ticks.
 - When the sensor is unavailable for a while, the tile keeps it and shows its state until `elements` is back.
 - A plugin tile cannot take a whole page; any other size of the grid is fine.
-- The tile's background colour is set in the editor, as for every tile. Its inspector has three options of its own:
+- The tile's background colour is set in the editor, as for every tile. Its inspector has four options of its own:
   **Show the name** (on) for the tile's name over the parts (off gives the parts its room), **Values in their
   colour** (off) to paint each number in its part's colour as well, readable in light and dark, and **Values in a row**
   (automatic): all values and rings in one row, or two to a row, instead of the arrangement that makes them largest
-  (four values on a wide tile as one row of four or two rows of two). The card a tap opens keeps its numbers in the
+  (four values on a wide tile as one row of four or two rows of two). **Larger values** (off): Tessera's numbers come
+  in fixed sizes, the card's number and the large digits with nothing between, so a number that stops at the card's
+  size is drawn up to half again larger where its column and the tile's height have room (never past the large digits,
+  its edges a little softer). The card a tap opens keeps its numbers in the
   look's ink and chooses its arrangement itself.
 
 ## How it works

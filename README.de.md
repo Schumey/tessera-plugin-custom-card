@@ -203,11 +203,14 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
   sich ein Wert ändert.
 - Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` wieder da ist.
 - Ein Plugin-Tile kann keine ganze Seite belegen; jede andere Größe des Rasters geht.
-- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat drei eigene
+- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat vier eigene
   Optionen: **Namen zeigen** (an) für den Namen über den Teilen (aus gibt den Teilen seinen Platz), **Werte in ihrer
   Farbe** (aus), um auch jede Zahl in der Farbe ihres Teils zu zeigen, hell und dunkel lesbar, und **Werte in einer
   Reihe** (automatisch): alle Werte und Ringe in einer Reihe oder zu zweit, statt der Anordnung, in der sie am größten
-  werden (vier Werte auf einer breiten Kachel als eine Reihe mit vier oder zwei Reihen mit zwei). Die Karte, die ein
+  werden (vier Werte auf einer breiten Kachel als eine Reihe mit vier oder zwei Reihen mit zwei). **Größere Werte**
+  (aus): Tesseras Zahlen gibt es nur in festen Größen, die Zahl einer Karte und die großen Ziffern, ohne Stufe
+  dazwischen; eine Zahl, die bei der Kartengröße bleibt, wird bis zur Hälfte größer gezeichnet, wo ihre Spalte und die
+  Höhe der Kachel Platz haben (nie größer als die großen Ziffern, ihre Kanten etwas weicher). Die Karte, die ein
   Tippen öffnet, zeigt ihre Zahlen weiter in der normalen Schriftfarbe und wählt ihre Anordnung selbst.
 
 ## Wie es funktioniert

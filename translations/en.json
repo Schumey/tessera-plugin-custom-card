@@ -18,6 +18,8 @@
     "show_name_hint": "The tile's name over its parts. Off: more room for the parts.",
     "coloured_values": "Values in their colour",
     "coloured_values_hint": "The numbers take their part's colour, not only its icon, bar and ring.",
+    "large_values": "Larger values",
+    "large_values_hint": "Tessera's numbers come in fixed sizes, the card's number and the large digits with no step between. On, a number that stops at the card's size grows up to half again where the tile has room; its edges get a little softer.",
     "per_row": "Values in a row",
     "per_row_hint": "How the values and rings stand: as the tile's room makes them largest, all in one row, or two to a row.",
     "per_row_auto": "Automatic",
