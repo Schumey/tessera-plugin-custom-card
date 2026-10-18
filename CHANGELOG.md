@@ -7,6 +7,8 @@
 - Four values on a wide tile one row high stand as two rows of two where that gives them a larger face than one row.
 - Values whose parts all have an icon take the row of labels where it makes them larger: the icon moves up to its
   label, so each value has its column's whole width (four values in one row under the tile's name).
+- A third option of the tile in the inspector: **Values in a row**, automatic (as before), all in one row, or two to a
+  row (four values on a wide tile as one row of four or two rows of two).
 
 ## 0.6.0 - 2026-10-17
 - A table: `row` parts that follow each other stand as rows, each label at the left and its value at the right, so the

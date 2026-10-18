@@ -164,9 +164,11 @@ class Drawing {
   explicit Drawing(const tessera::Plugin *plugin) : plugin_(plugin) {}
 
   // `titled`: the tile's name heads the parts (a card has its title in Tessera's frame instead, and a tile may turn it
-  // off). `coloured`: a value takes its part's colour too, not only its mark.
+  // off). `coloured`: a value takes its part's colour too, not only its mark. `per_row`: how many values stand in a
+  // row, 0 for what makes them largest, MAX_IN_ROW for all in one row.
   void create(lv_obj_t *parent, int width, int height, bool flat, const std::string &name, bool titled,
-              bool coloured) {
+              bool coloured, int per_row = 0) {
+    per_row_ = per_row;
     width_ = width;
     height_ = height;
     flat_ = flat;
@@ -540,10 +542,11 @@ class Drawing {
   // The arrangements a search tries: side by side, stacked, and stacked two to a row (four values on a wide flat tile
   // as two rows of two, where that gives them a larger face than one row of four).
   static constexpr int ARRANGEMENTS = 3;
+  // With the tile's option (per_row_) only the arrangements of that many values to a row.
   void arrange() {
-    arranged_[0] = side_by_side();
-    arranged_[1] = stacked();
-    arranged_[2] = stacked(2);
+    arranged_[0] = per_row_ == 0 || per_row_ >= MAX_IN_ROW ? side_by_side() : Lines();
+    arranged_[1] = stacked(per_row_ ? per_row_ : MAX_IN_ROW);
+    arranged_[2] = per_row_ == 0 ? stacked(2) : Lines();
   }
   // What a search found: whether anything fits, the values' face, whether the name and the labels stand, whether texts
   // beside other parts stay whole, and which arrangement (an index of arranged_).
@@ -926,6 +929,7 @@ class Drawing {
   const tessera::Plugin *plugin_;
   int width_ = 0, height_ = 0;
   bool flat_ = false, titled_ = true, coloured_ = false;
+  int per_row_ = 0;  // the tile's option: values to a row, 0 for the layout's choice
   // Kept in PSRAM (tessera::Text and tessera::List, plugin API 0.10): the memory inside the chip stays Wi-Fi's.
   tessera::Text name_, shown_name_, note_text_;
   tessera::List<Part> parts_;
@@ -953,8 +957,11 @@ class CardTile : public tessera::Tile {
     // A tile one row high and two columns or more puts its parts side by side, as the departures plugin turns into a
     // list on two columns.
     // Its options (Schumey, pull request #2): the name over the parts, and the values in their parts' colours.
+    // And how many values stand in a row: the layout's choice, all in one row, or two.
+    const std::string per_row = c.options["per_row"] | "auto";
     drawing_.create(c.parent, c.width, c.height, c.rows == 1 && c.columns >= 2, c.name ? c.name : "",
-                    c.options["show_name"] | true, c.options["coloured_values"] | false);
+                    c.options["show_name"] | true, c.options["coloured_values"] | false,
+                    per_row == "all" ? MAX_IN_ROW : per_row == "two" ? 2 : 0);
   }
   void on_state(JsonObjectConst data) override { drawing_.take(data); }
   void on_theme() override { drawing_.paint(); }

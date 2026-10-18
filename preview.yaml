@@ -6,7 +6,7 @@ tiles:
   - tile: card
     name: Computer
     entity: sensor.computer_card
-    options: { show_name: false, coloured_values: true }
+    options: { show_name: false, coloured_values: true, per_row: all }
     sizes: [2x1, 2x2]
   - tile: card
     name: Living room
@@ -31,7 +31,7 @@ tiles:
   - tile: card
     name: Climate
     entity: sensor.climate_card
-    options: { show_name: false, coloured_values: true }
+    options: { show_name: false, coloured_values: true, per_row: all }
     sizes: [2x1, 2x2]
 
 states:

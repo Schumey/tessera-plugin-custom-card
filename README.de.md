@@ -203,10 +203,12 @@ und bei einem Balken oder Ring sein kleinster und größter Wert. Felder am Ende
   sich ein Wert ändert.
 - Ist der Sensor eine Weile nicht verfügbar, behält das Tile ihn und zeigt seinen Zustand, bis `elements` wieder da ist.
 - Ein Plugin-Tile kann keine ganze Seite belegen; jede andere Größe des Rasters geht.
-- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat zwei eigene
-  Optionen: **Namen zeigen** (an) für den Namen über den Teilen (aus gibt den Teilen seinen Platz), und **Werte in ihrer
-  Farbe** (aus), um auch jede Zahl in der Farbe ihres Teils zu zeigen, hell und dunkel lesbar. Die Karte, die ein Tippen
-  öffnet, zeigt ihre Zahlen weiter in der normalen Schriftfarbe.
+- Die Hintergrundfarbe des Tiles stellst du im Editor ein, wie bei jedem Tile. Sein Inspector hat drei eigene
+  Optionen: **Namen zeigen** (an) für den Namen über den Teilen (aus gibt den Teilen seinen Platz), **Werte in ihrer
+  Farbe** (aus), um auch jede Zahl in der Farbe ihres Teils zu zeigen, hell und dunkel lesbar, und **Werte in einer
+  Reihe** (automatisch): alle Werte und Ringe in einer Reihe oder zu zweit, statt der Anordnung, in der sie am größten
+  werden (vier Werte auf einer breiten Kachel als eine Reihe mit vier oder zwei Reihen mit zwei). Die Karte, die ein
+  Tippen öffnet, zeigt ihre Zahlen weiter in der normalen Schriftfarbe und wählt ihre Anordnung selbst.
 
 ## Wie es funktioniert
 

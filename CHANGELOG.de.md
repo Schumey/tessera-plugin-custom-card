@@ -8,6 +8,8 @@
   in einer Reihe.
 - Werte, deren Teile alle ein Icon haben, nehmen die Zeile der Labels, wo sie dadurch größer werden: Das Icon rückt zu
   seinem Label, so hat jeder Wert die ganze Breite seiner Spalte (vier Werte in einer Reihe unter dem Namen der Kachel).
+- Eine dritte Option der Kachel im Inspector: **Werte in einer Reihe**, automatisch (wie bisher), alle in einer Reihe
+  oder zwei pro Reihe (vier Werte auf einer breiten Kachel als eine Reihe mit vier oder zwei Reihen mit zwei).
 
 ## 0.6.0 - 2026-10-17
 - Eine Tabelle: aufeinanderfolgende `row`-Teile stehen als Zeilen, das Label links und der Wert rechts, so stehen die
